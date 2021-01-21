@@ -2,8 +2,39 @@
 //
 
 #include <Windows.h>
-#include <winternl.h>
 #include <iostream>
+
+typedef struct _UNICODE_STRING {
+    USHORT Length;
+    USHORT MaximumLength;
+    PWSTR  Buffer;
+} UNICODE_STRING, * PUNICODE_STRING;
+
+typedef struct _LDR_DATA_TABLE_ENTRY {
+    LIST_ENTRY InLoadOrderLinks;
+    LIST_ENTRY InMemoryOrderLinks;
+    LIST_ENTRY InInitialiationOrderLinks;
+    PVOID DllBase;
+    PVOID EntryPoint;
+    ULONG SizeOfImage;
+    UNICODE_STRING FullDllName;
+    UNICODE_STRING BaseDllName;
+    ULONG Flags;
+} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
+
+typedef struct _PEB_LDR_DATA {
+    PVOID dontCare;
+    PVOID dontCare2;
+    PVOID dontCare3;
+    LIST_ENTRY InLoadOrderModuleList;
+} PEB_LDR_DATA, * PPEB_LDR_DATA;
+
+typedef struct _PEB {
+    PVOID dontCare;
+    PVOID dontCare2;
+    PVOID dontCare3;
+    PEB_LDR_DATA* Ldr;
+} PEB, * PPEB;
 
 int main(int argc, char **argv){
     void *_pebPtr = NULL;
@@ -21,13 +52,13 @@ int main(int argc, char **argv){
     PLIST_ENTRY link;
     PLDR_DATA_TABLE_ENTRY ldrMod;
 
-    for (link = pebPtr->Ldr->InMemoryOrderModuleList.Flink->Flink;
-        link != pebPtr->Ldr->InMemoryOrderModuleList.Flink;
+    for (link = pebPtr->Ldr->InLoadOrderModuleList.Flink->Flink;
+        link != pebPtr->Ldr->InLoadOrderModuleList.Flink;
         link = link->Flink) {
 
         ldrMod = (PLDR_DATA_TABLE_ENTRY)link;
 
-        if (wcscmp(L"KERNEL32.DLL", ldrMod->FullDllName.Buffer) == 0) {
+        if (wcscmp(L"KERNEL32.DLL", ldrMod->BaseDllName.Buffer) == 0) {
             std::cout << "AAAAAAAA " << std::endl;
         }
         //std::cout << ldrMod->FullDllName.Buffer << std::endl;
@@ -35,7 +66,7 @@ int main(int argc, char **argv){
         //break;
 
         wprintf(L"module %-17s base@ %10p\n",
-            ldrMod->FullDllName.Buffer,
+            ldrMod->BaseDllName.Buffer,
             ldrMod->DllBase);
     }
 

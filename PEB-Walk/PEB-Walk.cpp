@@ -1,20 +1,48 @@
 // PEB-Walk.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
+#include <Windows.h>
+#include <winternl.h>
 #include <iostream>
 
-int main()
-{
-    std::cout << "Hello World!\n";
+int main(int argc, char **argv){
+    void *_pebPtr = NULL;
+    PEB *pebPtr;
+
+    __asm {
+        mov eax, fs: [0x30]
+        mov _pebPtr, eax
+    };
+
+    pebPtr = (PEB*)_pebPtr;
+
+    std::cout << "PEB:         " << pebPtr << std::endl;
+    
+    PLIST_ENTRY link;
+    PLDR_DATA_TABLE_ENTRY ldrMod;
+
+    for (link = pebPtr->Ldr->InMemoryOrderModuleList.Flink->Flink;
+        link != pebPtr->Ldr->InMemoryOrderModuleList.Flink;
+        link = link->Flink) {
+
+        ldrMod = (PLDR_DATA_TABLE_ENTRY)link;
+
+        if (wcscmp(L"KERNEL32.DLL", ldrMod->FullDllName.Buffer) == 0) {
+            std::cout << "AAAAAAAA " << std::endl;
+        }
+        //std::cout << ldrMod->FullDllName.Buffer << std::endl;
+
+        //break;
+
+        wprintf(L"module %-17s base@ %10p\n",
+            ldrMod->FullDllName.Buffer,
+            ldrMod->DllBase);
+    }
+
+    /*while (true)
+    {
+
+    }*/
+
+    return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

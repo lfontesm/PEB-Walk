@@ -3,73 +3,49 @@
 
 #include <Windows.h>
 #include <iostream>
-
-typedef struct _UNICODE_STRING {
-    USHORT Length;
-    USHORT MaximumLength;
-    PWSTR  Buffer;
-} UNICODE_STRING, * PUNICODE_STRING;
-
-typedef struct _LDR_DATA_TABLE_ENTRY {
-    LIST_ENTRY InLoadOrderLinks;
-    LIST_ENTRY InMemoryOrderLinks;
-    LIST_ENTRY InInitialiationOrderLinks;
-    PVOID DllBase;
-    PVOID EntryPoint;
-    ULONG SizeOfImage;
-    UNICODE_STRING FullDllName;
-    UNICODE_STRING BaseDllName;
-    ULONG Flags;
-} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
-
-typedef struct _PEB_LDR_DATA {
-    PVOID dontCare;
-    PVOID dontCare2;
-    PVOID dontCare3;
-    LIST_ENTRY InLoadOrderModuleList;
-} PEB_LDR_DATA, * PPEB_LDR_DATA;
-
-typedef struct _PEB {
-    PVOID dontCare;
-    PVOID dontCare2;
-    PVOID dontCare3;
-    PEB_LDR_DATA* Ldr;
-} PEB, * PPEB;
+#include "..\mydefs.h"
 
 int main(int argc, char **argv){
     void *_pebPtr = NULL;
     PEB *pebPtr;
 
+    // Inline assembly to get the VA of the PEB
     __asm {
         mov eax, fs: [0x30]
         mov _pebPtr, eax
     };
 
+    // Typecast to a PEB type
     pebPtr = (PEB*)_pebPtr;
 
+    // Print the address for reasons
     std::cout << "PEB:         " << pebPtr << std::endl;
     
+    // Defining the iterator
     PLIST_ENTRY link;
+    // Defining the content of InLoadOrderModuleList
     PLDR_DATA_TABLE_ENTRY ldrMod;
 
+    // Iterate over the list of modules
     for (link = pebPtr->Ldr->InLoadOrderModuleList.Flink->Flink;
         link != pebPtr->Ldr->InLoadOrderModuleList.Flink;
         link = link->Flink) {
 
+        // Typecast to a list entry, e.g, a module
         ldrMod = (PLDR_DATA_TABLE_ENTRY)link;
 
-        if (wcscmp(L"KERNEL32.DLL", ldrMod->BaseDllName.Buffer) == 0) {
+        // Still deciding on what to do with this
+        if (ldrMod->BaseDllName.Buffer && wcscmp(L"KERNEL32.DLL", ldrMod->BaseDllName.Buffer) == 0) {
             std::cout << "AAAAAAAA " << std::endl;
         }
-        //std::cout << ldrMod->FullDllName.Buffer << std::endl;
 
-        //break;
-
+        // Print the module name and it's base address
         wprintf(L"module %-17s base@ %10p\n",
             ldrMod->BaseDllName.Buffer,
             ldrMod->DllBase);
     }
 
+    // For debugging
     /*while (true)
     {
 

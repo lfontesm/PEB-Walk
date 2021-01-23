@@ -143,9 +143,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="PEB-Walk.cpp" />
+    <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\mydefs.h" />
+    <ClInclude Include="..\PEB_defs.h" />
+    <ClInclude Include="img_defs.h" />
+    <ClInclude Include="more_defs.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

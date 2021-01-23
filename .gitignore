@@ -338,3 +338,7 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+*.h
+PEB-Walk/more_defs.hpp
+PEB-Walk/Source.cpp

@@ -1,6 +1,6 @@
 # PEB-Walk
 
-This project was inspired due to the lack of documentation around this subject.
+This project was inspired due to the lack of documentation around this subject. As an aspiring malware analyst, it hurt my ego that everytime I booted IDA or Ghidra and saw `mov eax, fs[0x30] ... mov esi, [eax+0x3c]` I had no idea how they implemented it. Of course I could implement it in MASM, since the source code is literally right there, but I also wanted to do it in C/C++, because why not?
 
 I'll document my learning process from simply accessing the PEB, to dynamically solving the IAT (a common technique used by malware authors).
 

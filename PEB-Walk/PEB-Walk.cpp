@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <intrin.h>
 
+// These are my own definitions of the structures the are to be used in this code.
+// Some of those you can find on Microsoft Documentation, such as LIST_ENTRY and UNICODE_STRING.
+// Others, you would have to google search in order to get a more complete and uncensored version of them,
+// and there's also some there are completely undocumented, but you can still find them with google search.
+// I prefered to use my own for better data management and also to avoid importing Windows.h (since I hate Windows)
 namespace WinDecls {
     struct LIST_ENTRY_T {
         const char* Flink;
@@ -51,26 +56,26 @@ namespace WinDecls {
         }
     };
 
-    struct IMAGE_DOS_HEADER { // DOS .EXE header
-        unsigned short e_magic; // Magic number
-        unsigned short e_cblp; // Bytes on last page of file
-        unsigned short e_cp; // Pages in file
-        unsigned short e_crlc; // Relocations
-        unsigned short e_cparhdr; // Size of header in paragraphs
-        unsigned short e_minalloc; // Minimum extra paragraphs needed
-        unsigned short e_maxalloc; // Maximum extra paragraphs needed
-        unsigned short e_ss; // Initial (relative) SS value
-        unsigned short e_sp; // Initial SP value
-        unsigned short e_csum; // Checksum
-        unsigned short e_ip; // Initial IP value
-        unsigned short e_cs; // Initial (relative) CS value
-        unsigned short e_lfarlc; // File address of relocation table
-        unsigned short e_ovno; // Overlay number
-        unsigned short e_res[4]; // Reserved words
-        unsigned short e_oemid; // OEM identifier (for e_oeminfo)
-        unsigned short e_oeminfo; // OEM information; e_oemid specific
-        unsigned short e_res2[10]; // Reserved words
-        long           e_lfanew; // File address of new exe header
+    struct IMAGE_DOS_HEADER { 
+        unsigned short e_magic;
+        unsigned short e_cblp;
+        unsigned short e_cp; 
+        unsigned short e_crlc;
+        unsigned short e_cparhdr; 
+        unsigned short e_minalloc; 
+        unsigned short e_maxalloc;
+        unsigned short e_ss; 
+        unsigned short e_sp; 
+        unsigned short e_csum;
+        unsigned short e_ip; 
+        unsigned short e_cs;
+        unsigned short e_lfarlc;
+        unsigned short e_ovno; 
+        unsigned short e_res[4];
+        unsigned short e_oemid; 
+        unsigned short e_oeminfo;
+        unsigned short e_res2[10];
+        long           e_lfanew;
     };
 
     struct IMAGE_FILE_HEADER {
@@ -92,9 +97,9 @@ namespace WinDecls {
         unsigned long  Base;
         unsigned long  NumberOfFunctions;
         unsigned long  NumberOfNames;
-        unsigned long  AddressOfFunctions; // RVA from base of image
-        unsigned long  AddressOfNames; // RVA from base of image
-        unsigned long  AddressOfNameOrdinals; // RVA from base of image
+        unsigned long  AddressOfFunctions;
+        unsigned long  AddressOfNames;
+        unsigned long  AddressOfNameOrdinals; 
     };
 
     struct IMAGE_DATA_DIRECTORY {

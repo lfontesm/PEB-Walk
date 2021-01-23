@@ -7,6 +7,9 @@
 // Others, you would have to google search in order to get a more complete and uncensored version of them,
 // and there's also some there are completely undocumented, but you can still find them with google search.
 // I prefered to use my own for better data management and also to avoid importing Windows.h (since I hate Windows)
+
+// Also, specifically the LDR_DATA_TABLE_ENTRY_, the lazy_importer by @JustasMasiulis defined a nice function called load_next().
+// And I decided to add it, because Bruce Lee told me to adapt whats useful >:O
 namespace WinDecls {
     struct LIST_ENTRY_T {
         const char* Flink;

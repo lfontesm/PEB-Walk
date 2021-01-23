@@ -191,7 +191,7 @@
     } // namespace win
 //}
 
-
+//const int* pLoadLibrary(const char *);
 
 int main() {
     const char* func = "LoadLibraryA";
@@ -225,9 +225,19 @@ int main() {
                 base + exportDir->AddressOfNames)[i]);
 
         printf("      [+] [%d] = %s\n", i, name);
+
+        if ( ( strcmp(func, name) == 0 ) ) {
+            const auto* const RvaTable = reinterpret_cast<const unsigned long*> (base + exportDir->AddressOfFunctions);
+            const auto* const OrdTable = reinterpret_cast<const unsigned short*>(base + exportDir->AddressOfNameOrdinals);
+
+            const int (*pLoadLibrary)(const char *) = reinterpret_cast<const int(*)(const char*)>(base + RvaTable[OrdTable[i]]);
+
+            pLoadLibrary("user32.dll");
+            
+            break;
+        }
+
     }
-    
-    
 
     /*wprintf(L"\n\nENTER exits...\n");
     getc(stdin);*/

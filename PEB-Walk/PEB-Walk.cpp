@@ -19,13 +19,13 @@ namespace WinDecls {
     struct UNICODE_STRING_T {
         unsigned short Length;
         unsigned short MaximumLength;
-        wchar_t* Buffer;
+        wchar_t*       Buffer;
     };
 
     struct PEB_LDR_DATA_T {
         unsigned long Length;
         unsigned long Initialized;
-        const char* SsHandle;
+        const char*   SsHandle;
         LIST_ENTRY_T  InLoadOrderModuleList;
     };
 
@@ -33,7 +33,7 @@ namespace WinDecls {
         unsigned char   Reserved1[2];
         unsigned char   BeingDebugged;
         unsigned char   Reserved2[1];
-        const char* Reserved3[2];
+        const char*     Reserved3[2];
         PEB_LDR_DATA_T* Ldr;
     };
 
@@ -41,8 +41,8 @@ namespace WinDecls {
         LIST_ENTRY_T InLoadOrderLinks;
         LIST_ENTRY_T InMemoryOrderLinks;
         LIST_ENTRY_T InInitializationOrderLinks;
-        const char* DllBase;
-        const char* EntryPoint;
+        const char*  DllBase;
+        const char*  EntryPoint;
         union {
             unsigned long SizeOfImage;
             const char* _dummy;
@@ -144,8 +144,8 @@ namespace WinDecls {
     };
 
     struct IMAGE_NT_HEADERS {
-        unsigned long     Signature;
-        IMAGE_FILE_HEADER FileHeader;
+        unsigned long           Signature;
+        IMAGE_FILE_HEADER       FileHeader;
         IMAGE_OPTIONAL_HEADER32 OptionalHeader;
     };
 

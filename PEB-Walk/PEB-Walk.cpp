@@ -147,50 +147,66 @@ namespace WinDecls {
 
 int main() {
     const char* func = "LoadLibraryA";
+
+    // Retrieve pointer to PEB
     const WinDecls::PEB_T* pebPtr = reinterpret_cast<const WinDecls::PEB_T*>(__readfsdword(0x30));
+    // Retrieve pointer to LDR_DATA
     const WinDecls::PEB_LDR_DATA_T* Ldr = pebPtr->Ldr;
-    const WinDecls::LDR_DATA_TABLE_ENTRY_T* kernel32Module = reinterpret_cast<const WinDecls::LDR_DATA_TABLE_ENTRY_T*>(pebPtr->Ldr->InLoadOrderModuleList.Flink);
+    // Retrieve pointer to first module of list (PEB-Walk.exe)
+    const WinDecls::LDR_DATA_TABLE_ENTRY_T* kernel32Module = reinterpret_cast<const WinDecls::LDR_DATA_TABLE_ENTRY_T*>(Ldr->InLoadOrderModuleList.Flink);
+    // Walk the list until kernel32.dll
     kernel32Module = kernel32Module->load_order_next()->load_order_next();
   
+    // Retrieve the base address of the module
+    const char* base = kernel32Module->DllBase;
 // Uncomment to print the address of PEB and the current module being iterated, and vice versa
 #define PRINT_PEB
 #if defined(PRINT_PEB)
     printf("[+] PEB @: %p\n", pebPtr);
-    const char* base = kernel32Module->DllBase;
     wprintf(L"  [+] Module: %s @ %p\n", kernel32Module->BaseDllName.Buffer, base);
 #endif
+    // Retrieve a pointer to the NT_HEADERS
     const WinDecls::IMAGE_NT_HEADERS* ntHeaders = 
         reinterpret_cast<const WinDecls::IMAGE_NT_HEADERS*>(
             base + reinterpret_cast<const WinDecls::IMAGE_DOS_HEADER*>(base)->e_lfanew);
 
+    // Retrieve a pointer to the first entry in DataDirectory[] list (EXPORT_DIRECTORY RVA)
     const auto dataDir = ntHeaders->OptionalHeader.DataDirectory[0];
-    unsigned long dataDirSize = dataDir.Size;
     
+    // Retrieve a pointer to the actual address of the EXPORT_DIRECTORY
     const WinDecls::IMAGE_EXPORT_DIRECTORY* exportDir = reinterpret_cast<const WinDecls::IMAGE_EXPORT_DIRECTORY*>(base + dataDir.VirtualAddress);
-    
+    // Retrieve the number of entries in the symbol table (both the strings and RVA symbol table)
     unsigned long NumberOfNames = exportDir->NumberOfNames;
    
 // Uncomment to print the NumberOfNames variable (Number of strings on symbol table), and vice versa
-#define PRINT_NOFNAMES
+//#define PRINT_NOFNAMES
 #if defined(PRINT_NOFNAMES)
     printf("    [+] Number of names: %d\n", NumberOfNames);
 #endif
-    for (size_t i = NumberOfNames; i > 0; i--) {
+    // Iterate over the the table
+    for (size_t index = NumberOfNames; index > 0; index--) {
+        // Retrieve a pointer to an entry in the string table @ index
+        // RVAOfStringInFile     = (base + exportDir->AddressOfNames[index])
+        // PointerToStringInFile =  base + RVAOfStringInFile
         const char* name = reinterpret_cast<const char*>(base +
             reinterpret_cast<const unsigned long*>(
-                base + exportDir->AddressOfNames)[i]);
+                base + exportDir->AddressOfNames)[index]);
 
 // Uncomment to print the string table containing the functions names, and vice versa
 #define PRINT_STRINGS
 #if defined(PRINT_STRINGS)
-        printf("      [+] [%d] = %s\n", i, name);
+        printf("      [+] [%d] = %s\n", index, name);
 #endif
+        // Lazy checking if we found LoadLibraryA
         if ( ( strcmp(func, name) == 0 ) ) {
-            const auto* const RvaTable = reinterpret_cast<const unsigned long*> (base + exportDir->AddressOfFunctions);
+            // Retrieve the RVA Table
+            const auto* const AddrTable = reinterpret_cast<const unsigned long*> (base + exportDir->AddressOfFunctions);
+            // Retrieve the Ordinal Table
             const auto* const OrdTable = reinterpret_cast<const unsigned short*>(base + exportDir->AddressOfNameOrdinals);
 
-            const int (*pLoadLibrary)(const char *) = reinterpret_cast<const int(*)(const char*)>(base + RvaTable[OrdTable[i]]);
-
+            // Retrieve the function pointer
+            const int (*pLoadLibrary)(const char *) = reinterpret_cast<const int(*)(const char*)>(base + AddrTable[OrdTable[index]]);
+            // Call the function with argument "user32.dll"
             pLoadLibrary("user32.dll");
             
             break;

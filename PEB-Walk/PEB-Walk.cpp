@@ -1,4 +1,3 @@
-//#include "lazy_importer.hpp"
 #include <string.h>
 #include <stdio.h>
 #include <intrin.h>
@@ -149,7 +148,7 @@ namespace WinDecls {
 
  } 
 
-
+// I'll keep working on this until i can import functions like a pro. And I plan on adding more modularity
 int main() {
     const char* func = "LoadLibraryA";
 

@@ -8,6 +8,7 @@ I'll document my learning process from simply accessing the PEB, to dynamically 
 After lots of head-aches my code can finally retrieve the `LoadLibraryA` function from kernel32.dll and load `user32.dll`.
 
 ### Next objectives:
+* Make it work for a 64-bit machine.
 * Make a more modularized code, as of right now it's too hard coded.
 * Maybe implement some sort of hashing in the strings.
 * Dinamically import functions and store them in a user-made table (simulate IAT).

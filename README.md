@@ -11,3 +11,7 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 * Make a more modularized code, as of right now it's too hard coded.
 * Maybe implement some sort of hashing in the strings.
 * Dinamically import functions and store them in a user-made table (simulate IAT).
+
+---
+
+[This](https://github.com/corkami/pics/blob/master/binary/pe102/pe102.svg) visual documentation by @corkami is also incredible and will help understand the code.

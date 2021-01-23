@@ -14,4 +14,4 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 
 ---
 
-[This](https://github.com/corkami/pics/blob/master/binary/pe102/pe102.svg) visual documentation by @corkami is also incredible and will help understand the code.
+[This](https://github.com/corkami/pics/blob/master/binary/pe102/pe102.svg) visual documentation by @Corkami is also incredible and will help understand the code.

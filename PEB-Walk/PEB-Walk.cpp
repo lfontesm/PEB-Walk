@@ -200,12 +200,34 @@ int main() {
     const win::LDR_DATA_TABLE_ENTRY_T* kernel32Module = reinterpret_cast<const win::LDR_DATA_TABLE_ENTRY_T*>(pebPtr->Ldr->InLoadOrderModuleList.Flink);
     kernel32Module = kernel32Module->load_order_next()->load_order_next();
     
-
-    
-
     printf("[+] PEB @: %p\n", pebPtr);
+    const char* base = kernel32Module->DllBase;
+    wprintf(L"  [+] Module: %s @ %p\n", kernel32Module->BaseDllName.Buffer, base);
 
-    wprintf(L"  [+] Module: %s @ %p\n", kernel32Module->BaseDllName.Buffer, kernel32Module->DllBase);
+    const win::IMAGE_NT_HEADERS* ntHeaders = 
+        reinterpret_cast<const win::IMAGE_NT_HEADERS*>(
+            base + reinterpret_cast<const win::IMAGE_DOS_HEADER*>(base)->e_lfanew);
+
+    //printf("    [+] PE signature: %s\n", ntHeaders->Signature);
+
+    const auto dataDir = ntHeaders->OptionalHeader.DataDirectory[0];
+    unsigned long dataDirSize = dataDir.Size;
+    
+    const win::IMAGE_EXPORT_DIRECTORY* exportDir = reinterpret_cast<const win::IMAGE_EXPORT_DIRECTORY*>(base + dataDir.VirtualAddress);
+    
+    unsigned long NumberOfNames = exportDir->NumberOfNames;
+    
+    printf("    [+] Number of names: %d\n", NumberOfNames);
+
+    for (size_t i = NumberOfNames; i > 0; i--) {
+        const char* name = reinterpret_cast<const char*>(base +
+            reinterpret_cast<const unsigned long*>(
+                base + exportDir->AddressOfNames)[i]);
+
+        printf("      [+] [%d] = %s\n", i, name);
+    }
+    
+    
 
     /*wprintf(L"\n\nENTER exits...\n");
     getc(stdin);*/

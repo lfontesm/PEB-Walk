@@ -1,7 +1,7 @@
      DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
                     Version 2, January 2021
 
- Copyright (C) 2021 Leonardo Fontes <moreirafontesleo@gmail.com>
+ Copyright (C) 2021 Leonardo Fontes
 
  Everyone is permitted to copy and distribute verbatim or modified
  copies of this license document, and changing it is allowed as long

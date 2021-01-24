@@ -28,9 +28,9 @@ int main(int argc, char **argv) {
 
 	do {
 		// Retrieve module base addr
-		const char* base		= iter.get_base();
+		const char* base	= iter.get_base();
 		// Retrieve module name
-		const wchar_t* modName  =  iter.get_modName();
+		const wchar_t* modName  = iter.get_modName();
 		// Retrieve ntHeader
 		const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
 
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 		// Retrieve export directory
 		const WinDecls::IMAGE_EXPORT_DIRECTORY* exportDir = (const WinDecls::IMAGE_EXPORT_DIRECTORY*)(base + exportDirRVA);
 		// Retrieve NumberOfNames
-		unsigned long NumberOfNames = exportDir->NumberOfNames;
+		unsigned long NumberOfNames    = exportDir->NumberOfNames;
 		// Retrieve RVA to string table
 		const unsigned long RVAOfNames = exportDir->AddressOfNames;
 

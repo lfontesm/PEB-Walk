@@ -28,11 +28,11 @@ int main(int argc, char **argv) {
 
 	do {
 		// Retrieve module base addr
-		const char* base	= iter.get_base();
+		const char* base       = iter.get_base();
 		// Retrieve module name
-		const wchar_t* modName  = iter.get_modName();
+		const wchar_t* modName = iter.get_modName();
 		// Retrieve ntHeader
-		const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
+		const WinDecls::IMAGE_NT_HEADERS* ntHeaders  = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
 
 		// Retrieve first entry on DATA_DIRECTORY list
 		const WinDecls::IMAGE_DATA_DIRECTORY dataDir = (const WinDecls::IMAGE_DATA_DIRECTORY)(ntHeaders->OptionalHeader.DataDirectory[0]);

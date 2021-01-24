@@ -12,13 +12,13 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 ![Screenshot_20210123_182530](https://user-images.githubusercontent.com/28660375/105614462-62e51000-5da8-11eb-8a4c-317510ac1d3f.png)
 
 * x64dbg View:
-  * Before the function call:
+   Before the function call:
   
 ![Screenshot_20210123_182748](https://user-images.githubusercontent.com/28660375/105614522-b6eff480-5da8-11eb-88a2-d59a80b63253.png)
-  * Content on the registers:
+   Content on the registers:
   
 ![Screenshot_20210123_182909](https://user-images.githubusercontent.com/28660375/105614549-e6066600-5da8-11eb-8809-73b44028be8b.png)
-  * Content on stack:
+   Content on stack:
   
 ![Screenshot_20210123_182947](https://user-images.githubusercontent.com/28660375/105614561-fc142680-5da8-11eb-828b-426edbb3069a.png)
 

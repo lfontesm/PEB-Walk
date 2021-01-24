@@ -42,7 +42,9 @@ int main(int argc, char **argv) {
 		const unsigned long exportDirRVA = dataDir.VirtualAddress;
    
 		if (exportDirRVA == NULL) {
+#if defined(TRACE)
 			wprintf(L"[-] Couldn't find export directory on module \"%s\", skipping...\n", modName);
+#endif
 			iter = iter.next();
 			continue;
 		}

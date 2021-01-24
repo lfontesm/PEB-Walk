@@ -29,7 +29,7 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 * Make it work for a 64-bit machine.
 * Make a more modularized code, as of right now it's too hard coded.
 * Maybe implement some sort of hashing in the strings.
-* Dinamically import functions and store them in a user-made table (simulate IAT).
+* Dinamically import functions and store them in a user-made table of sorts(simulate IAT).
 
 ---
 

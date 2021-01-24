@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <intrin.h>
-#include <cstdarg>
-#include <typeinfo>
 #include "ModuleIterator.hpp" // Iterator class used to iterate over the module list
 
 // Comment this line below to enable debug messages, and vice-versa

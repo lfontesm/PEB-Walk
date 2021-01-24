@@ -142,13 +142,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ModuleIterator.cpp" />
     <ClCompile Include="PEB-Walk.cpp" />
-    <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PEB_defs.h" />
-    <ClInclude Include="img_defs.h" />
-    <ClInclude Include="more_defs.hpp" />
+    <ClInclude Include="ModuleIterator.hpp" />
+    <ClInclude Include="WinDecl.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

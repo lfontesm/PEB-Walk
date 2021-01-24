@@ -18,18 +18,15 @@
     <ClCompile Include="PEB-Walk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source.cpp">
-      <Filter>Resource Files</Filter>
+    <ClCompile Include="ModuleIterator.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PEB_defs.h">
+    <ClInclude Include="WinDecl.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="img_defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="more_defs.hpp">
+    <ClInclude Include="ModuleIterator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

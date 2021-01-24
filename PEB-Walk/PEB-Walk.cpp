@@ -20,7 +20,6 @@ T retrieve_function_by_name(const char* funcName, const char *base, const wchar_
 #if defined(TRACE)
 		wprintf(L"[-] Couldn't find export directory on module \"%s\", skipping...\n", modName);
 #endif
-		
 		return NULL;
 	}
 
@@ -51,15 +50,11 @@ T retrieve_function_by_name(const char* funcName, const char *base, const wchar_
 			// Retrieve pointer to RVA table
 			const unsigned long* funcPtrTable = (const unsigned long*)(base + exportDir->AddressOfFunctions);
 
-			// Retrieve and store function pointer
-			//pLoadLibrary = (const void* (*)(const char*))(base + funcPtrTable[ordTable[index]]);
-
+			// Retrieve and return function pointer
 			return (T)(base + funcPtrTable[ordTable[index]]);
-
-			//break;
 		}
 	}
-
+	// If no function was found, return NULL
 	return NULL;
 }
 
@@ -71,6 +66,9 @@ T iterate_modules(const char* funcName, ModuleIterator &iter) {
 		// Retrieve module name
 		const wchar_t* modName = iter.get_modName();
 
+		// Looks for function inside module, and if found, return and reset iterator to base module
+		// If you are patient enough you could elaborate a correct order of import so you wouldn't need to reset the iterator after every function found
+		// It would drastically improve performance
 		T funcPtr = retrieve_function_by_name<T>(funcName, base, modName);
 		if (funcPtr != NULL) {
 			iter.reset();
@@ -83,15 +81,19 @@ T iterate_modules(const char* funcName, ModuleIterator &iter) {
 	return NULL;
 }
 
+// I'm thinking about storing these in a different file
 typedef const void* (*LoadLibrary_t)(const char*);
 typedef int (*MessageBox_t)(void*, const char*, const char*, unsigned int);
+LoadLibrary_t pLoadLibrary;
+MessageBox_t  pMessageBox;
 
 // I'll keep working on this until i can import functions like a pro. And I plan on adding more modularity
 int main(int argc, char **argv) {
 	// Function we want to retrieve
     const char* func = "LoadLibraryA";
 	// Function pointer var with it's signature (refer to https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya)
-	LoadLibrary_t pLoadLibrary = NULL;
+	pLoadLibrary = NULL;
+	pMessageBox =  NULL;
 	// Read PEB at fs:[0x30]
 	const WinDecls::PEB_T* pebPtr = (WinDecls::PEB_T*)__readfsdword(0x30);
 
@@ -107,16 +109,15 @@ int main(int argc, char **argv) {
 	ModuleIterator iter(modPtr, Ldr);
 
 	pLoadLibrary = iterate_modules<decltype(pLoadLibrary)>(func, iter);
-	/*pLoadLibrary = NULL;
-	pLoadLibrary = iterate_modules<decltype(pLoadLibrary)>(func, iter);*/
 
 	// Calls intended function
+	// The code below needs trimming, but it is still new and I was checking if it worked, and it did! :D
 	if (pLoadLibrary != NULL) {
 		printf("[!] LOADING USER32.DLL...\n");
 		const char *pHandle = (const char *)pLoadLibrary("user32.dll");
 		if (pHandle != NULL) {
 			printf("  [!] MODULE LOADED @ %p\n", pHandle);
-			MessageBox_t pMessageBox = retrieve_function_by_name<MessageBox_t>("MessageBoxA", pHandle, L"user32.dll");
+			pMessageBox = retrieve_function_by_name<MessageBox_t>("MessageBoxA", pHandle, L"user32.dll");
 			if (pMessageBox != NULL)
 				pMessageBox(NULL, "Hello", "From the other side", 0x00000000L);
 		}

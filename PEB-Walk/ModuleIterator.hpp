@@ -8,6 +8,7 @@ class ModuleIterator {
 private:
 	// Pointer do the module structure, e.g, an entry on the InLoadOrderModuleList
 	const WinDecls::LDR_DATA_TABLE_ENTRY_T* modulePtr;
+	// Pointer to LDR_DATA. Needed to reset the iterator
 	const WinDecls::PEB_LDR_DATA_T* Ldr;
 	// Base of the module on memory
 	const char* base;

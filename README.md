@@ -12,6 +12,7 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 ![Screenshot_20210123_182530](https://user-images.githubusercontent.com/28660375/105614462-62e51000-5da8-11eb-8a4c-317510ac1d3f.png)
 
 * x64dbg View:
+   
    Before the function call:
   
 ![Screenshot_20210123_182748](https://user-images.githubusercontent.com/28660375/105614522-b6eff480-5da8-11eb-88a2-d59a80b63253.png)

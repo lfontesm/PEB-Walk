@@ -26,33 +26,131 @@ int main(int argc, char **argv) {
 	// Retrieve the first link and typecast to an entry type
 	const WinDecls::LDR_DATA_TABLE_ENTRY_T* modPtr = (const WinDecls::LDR_DATA_TABLE_ENTRY_T*)(Ldr->InLoadOrderModuleList.Flink);
 
-	// Initialize the module iterator
-	ModuleIterator iter(modPtr);
+    struct PEB_LDR_DATA_T {
+        unsigned long Length;
+        unsigned long Initialized;
+        const char* SsHandle;
+        LIST_ENTRY_T  InLoadOrderModuleList;
+    };
 
-	do {
-		// Retrieve base address of module
-		const char* base = iter.get_base();
-		// Retrieve NT_HEADERS
-		const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
+    struct PEB_T {
+        unsigned char   Reserved1[2];
+        unsigned char   BeingDebugged;
+        unsigned char   Reserved2[1];
+        const char* Reserved3[2];
+        PEB_LDR_DATA_T* Ldr;
+    };
 
-#if defined(TRACE)
-		wprintf(L"[+] %s @ %p\n", iter.get_modName(), iter.get_base());
-		printf("PE Signature: \"%s\". Offset: %x\n", ntHeaders, ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
-#endif
+    struct LDR_DATA_TABLE_ENTRY_T {
+        LIST_ENTRY_T InLoadOrderLinks;
+        LIST_ENTRY_T InMemoryOrderLinks;
+        LIST_ENTRY_T InInitializationOrderLinks;
+        const char* DllBase;
+        const char* EntryPoint;
+        union {
+            unsigned long SizeOfImage;
+            const char* _dummy;
+        };
+        UNICODE_STRING_T FullDllName;
+        UNICODE_STRING_T BaseDllName;
 
 		// Retrieve first entry on DATA_DIRECTORY list
 		const WinDecls::IMAGE_DATA_DIRECTORY dataDir = (const WinDecls::IMAGE_DATA_DIRECTORY)(ntHeaders->OptionalHeader.DataDirectory[0]);
 		// Retrieve the RVA from this entry (the first entry on DataDirectory is the EXPORT_DIRECTORY)
 		const unsigned long exportDirRVA = dataDir.VirtualAddress;
 
-		// Check if the module has an export directory (Usually our own module won't have one, since it isn't a Dll
-		if (exportDirRVA == 0) {
-#if defined(TRACE)
-			wprintf(L"No exportdir found, skipping module \"%s\"\n", iter.get_modName());
-#endif
-			iter = iter.next();
-			continue;
-		}
+    struct IMAGE_DOS_HEADER { 
+        unsigned short e_magic;
+        unsigned short e_cblp;
+        unsigned short e_cp; 
+        unsigned short e_crlc;
+        unsigned short e_cparhdr; 
+        unsigned short e_minalloc; 
+        unsigned short e_maxalloc;
+        unsigned short e_ss; 
+        unsigned short e_sp; 
+        unsigned short e_csum;
+        unsigned short e_ip; 
+        unsigned short e_cs;
+        unsigned short e_lfarlc;
+        unsigned short e_ovno; 
+        unsigned short e_res[4];
+        unsigned short e_oemid; 
+        unsigned short e_oeminfo;
+        unsigned short e_res2[10];
+        long           e_lfanew;
+    };
+
+    struct IMAGE_FILE_HEADER {
+        unsigned short Machine;
+        unsigned short NumberOfSections;
+        unsigned long  TimeDateStamp;
+        unsigned long  PointerToSymbolTable;
+        unsigned long  NumberOfSymbols;
+        unsigned short SizeOfOptionalHeader;
+        unsigned short Characteristics;
+    };
+
+    struct IMAGE_EXPORT_DIRECTORY {
+        unsigned long  Characteristics;
+        unsigned long  TimeDateStamp;
+        unsigned short MajorVersion;
+        unsigned short MinorVersion;
+        unsigned long  Name;
+        unsigned long  Base;
+        unsigned long  NumberOfFunctions;
+        unsigned long  NumberOfNames;
+        unsigned long  AddressOfFunctions;
+        unsigned long  AddressOfNames;
+        unsigned long  AddressOfNameOrdinals; 
+    };
+
+    struct IMAGE_DATA_DIRECTORY {
+        unsigned long VirtualAddress;
+        unsigned long Size;
+    };
+
+    struct IMAGE_OPTIONAL_HEADER32 {
+        unsigned short       Magic;
+        unsigned char        MajorLinkerVersion;
+        unsigned char        MinorLinkerVersion;
+        unsigned long        SizeOfCode;
+        unsigned long        SizeOfInitializedData;
+        unsigned long        SizeOfUninitializedData;
+        unsigned long        AddressOfEntryPoint;
+        unsigned long        BaseOfCode;
+        unsigned long        BaseOfData;
+        unsigned long        ImageBase;
+        unsigned long        SectionAlignment;
+        unsigned long        FileAlignment;
+        unsigned short       MajorOperatingSystemVersion;
+        unsigned short       MinorOperatingSystemVersion;
+        unsigned short       MajorImageVersion;
+        unsigned short       MinorImageVersion;
+        unsigned short       MajorSubsystemVersion;
+        unsigned short       MinorSubsystemVersion;
+        unsigned long        Win32VersionValue;
+        unsigned long        SizeOfImage;
+        unsigned long        SizeOfHeaders;
+        unsigned long        CheckSum;
+        unsigned short       Subsystem;
+        unsigned short       DllCharacteristics;
+        unsigned long        SizeOfStackReserve;
+        unsigned long        SizeOfStackCommit;
+        unsigned long        SizeOfHeapReserve;
+        unsigned long        SizeOfHeapCommit;
+        unsigned long        LoaderFlags;
+        unsigned long        NumberOfRvaAndSizes;
+        IMAGE_DATA_DIRECTORY DataDirectory[16];
+    };
+
+    struct IMAGE_NT_HEADERS {
+        unsigned long     Signature;
+        IMAGE_FILE_HEADER FileHeader;
+        IMAGE_OPTIONAL_HEADER32 OptionalHeader;
+    };
+
+ } 
 
 		// Retrieve export directory
 		const WinDecls::IMAGE_EXPORT_DIRECTORY* exportDir = (const WinDecls::IMAGE_EXPORT_DIRECTORY*)(base + exportDirRVA);
@@ -100,5 +198,5 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	return 0;
+    return 0;
 }

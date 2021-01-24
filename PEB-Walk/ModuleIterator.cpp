@@ -1,12 +1,13 @@
 #include "ModuleIterator.hpp"
 
 // Check ModuleIterator.hpp
-ModuleIterator::ModuleIterator(const WinDecls::LDR_DATA_TABLE_ENTRY_T* _modptr) : modulePtr(_modptr) {
+ModuleIterator::ModuleIterator(const WinDecls::LDR_DATA_TABLE_ENTRY_T* _modptr, const WinDecls::PEB_LDR_DATA_T* _ldr) : modulePtr(_modptr), Ldr(_ldr) {
 	base = modulePtr->DllBase;
 }
 
-const WinDecls::LDR_DATA_TABLE_ENTRY_T*  ModuleIterator::next() {
-	return modulePtr->load_order_next();
+void  ModuleIterator::next() {
+	modulePtr =  modulePtr->load_order_next();
+	base      =  modulePtr->DllBase;
 }
 
 const char* ModuleIterator::get_base() const {
@@ -19,4 +20,9 @@ const WinDecls::LDR_DATA_TABLE_ENTRY_T* ModuleIterator::get_modPtr() const {
 
 const wchar_t* ModuleIterator::get_modName() const {
 	return modulePtr->BaseDllName.Buffer;
+}
+
+void ModuleIterator::reset() {
+	modulePtr = (const WinDecls::LDR_DATA_TABLE_ENTRY_T*)Ldr->InLoadOrderModuleList.Flink;
+	base      = modulePtr->DllBase;
 }

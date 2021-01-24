@@ -6,12 +6,92 @@
 
 // Comment this line below to enable debug messages, and vice-versa
 #define TRACE
+
+template <typename T>
+T retrieve_function_by_name(const char* funcName, const char *base, const wchar_t* modName) {
+	// Retrieve ntHeader
+	const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
+	// Retrieve first entry on DATA_DIRECTORY list
+	const WinDecls::IMAGE_DATA_DIRECTORY dataDir = (const WinDecls::IMAGE_DATA_DIRECTORY)(ntHeaders->OptionalHeader.DataDirectory[0]);
+	// Retrieve the RVA from this entry (the first entry on DataDirectory is the EXPORT_DIRECTORY)
+	const unsigned long exportDirRVA = dataDir.VirtualAddress;
+
+	if (exportDirRVA == NULL) {
+#if defined(TRACE)
+		wprintf(L"[-] Couldn't find export directory on module \"%s\", skipping...\n", modName);
+#endif
+		
+		return NULL;
+	}
+
+	// Retrieve export directory
+	const WinDecls::IMAGE_EXPORT_DIRECTORY* exportDir = (const WinDecls::IMAGE_EXPORT_DIRECTORY*)(base + exportDirRVA);
+	// Retrieve NumberOfNames
+	unsigned long NumberOfNames = exportDir->NumberOfNames;
+	// Retrieve RVA to string table
+	const unsigned long RVAOfNames = exportDir->AddressOfNames;
+
+#if defined(TRACE)
+	wprintf(L"NumberOfNames in \"%s\" = %d\n", modName, NumberOfNames);
+#endif
+	// Iterate over the string table, comparing the strings with the one we want to find
+	for (int index = NumberOfNames - 1; index >= 0; index--) {
+		// Had to use reinterpret_cast here, otherwise VS wouldn't compile
+		// Retrieve symbol name @ index on string table
+		const char* namePtr = (const char*)(base + reinterpret_cast<const unsigned long*>(base + RVAOfNames)[index]);
+
+#if defined(TRACE)
+		printf("[%d] = \"%s\"\n", index, namePtr);
+#endif
+
+		//Compares with our intended function
+		if (strcmp(funcName, namePtr) == 0) {
+			// Retrieve pointer to ordinal Table
+			const unsigned short* ordTable = (const unsigned short*)(base + exportDir->AddressOfNameOrdinals);
+			// Retrieve pointer to RVA table
+			const unsigned long* funcPtrTable = (const unsigned long*)(base + exportDir->AddressOfFunctions);
+
+			// Retrieve and store function pointer
+			//pLoadLibrary = (const void* (*)(const char*))(base + funcPtrTable[ordTable[index]]);
+
+			return (T)(base + funcPtrTable[ordTable[index]]);
+
+			//break;
+		}
+	}
+
+	return NULL;
+}
+
+template <typename T>
+T iterate_modules(const char* funcName, ModuleIterator &iter) {
+	do {
+		// Retrieve module base addr
+		const char* base = iter.get_base();
+		// Retrieve module name
+		const wchar_t* modName = iter.get_modName();
+
+		T funcPtr = retrieve_function_by_name<T>(funcName, base, modName);
+		if (funcPtr != NULL) {
+			iter.reset();
+			return funcPtr;
+		}
+
+		iter.next();
+	} while (iter.get_base() != NULL);
+
+	return NULL;
+}
+
+typedef const void* (*LoadLibrary_t)(const char*);
+typedef int (*MessageBox_t)(void*, const char*, const char*, unsigned int);
+
 // I'll keep working on this until i can import functions like a pro. And I plan on adding more modularity
 int main(int argc, char **argv) {
 	// Function we want to retrieve
     const char* func = "LoadLibraryA";
 	// Function pointer var with it's signature (refer to https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya)
-	const void *(*pLoadLibrary)(const char*) = NULL;
+	LoadLibrary_t pLoadLibrary = NULL;
 	// Read PEB at fs:[0x30]
 	const WinDecls::PEB_T* pebPtr = (WinDecls::PEB_T*)__readfsdword(0x30);
 
@@ -24,72 +104,21 @@ int main(int argc, char **argv) {
 	// Retrieve the first link and typecast to an entry type
 	const WinDecls::LDR_DATA_TABLE_ENTRY_T* modPtr = (const WinDecls::LDR_DATA_TABLE_ENTRY_T*)(Ldr->InLoadOrderModuleList.Flink);
 	
-	ModuleIterator iter(modPtr);
+	ModuleIterator iter(modPtr, Ldr);
 
-	do {
-		// Retrieve module base addr
-		const char* base       = iter.get_base();
-		// Retrieve module name
-		const wchar_t* modName = iter.get_modName();
-		// Retrieve ntHeader
-		const WinDecls::IMAGE_NT_HEADERS* ntHeaders  = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
-
-		// Retrieve first entry on DATA_DIRECTORY list
-		const WinDecls::IMAGE_DATA_DIRECTORY dataDir = (const WinDecls::IMAGE_DATA_DIRECTORY)(ntHeaders->OptionalHeader.DataDirectory[0]);
-		// Retrieve the RVA from this entry (the first entry on DataDirectory is the EXPORT_DIRECTORY)
-		const unsigned long exportDirRVA = dataDir.VirtualAddress;
-   
-		if (exportDirRVA == NULL) {
-#if defined(TRACE)
-			wprintf(L"[-] Couldn't find export directory on module \"%s\", skipping...\n", modName);
-#endif
-			iter = iter.next();
-			continue;
-		}
-
-		// Retrieve export directory
-		const WinDecls::IMAGE_EXPORT_DIRECTORY* exportDir = (const WinDecls::IMAGE_EXPORT_DIRECTORY*)(base + exportDirRVA);
-		// Retrieve NumberOfNames
-		unsigned long NumberOfNames    = exportDir->NumberOfNames;
-		// Retrieve RVA to string table
-		const unsigned long RVAOfNames = exportDir->AddressOfNames;
-
-#if defined(TRACE)
-		wprintf(L"NumberOfNames in \"%s\" = %d\n", iter.get_modName(), NumberOfNames);
-#endif
-		// Iterate over the string table, comparing the strings with the one we want to find
-		for (int index = NumberOfNames-1; index >= 0; index--){
-			// Had to use reinterpret_cast here, otherwise VS wouldn't compile
-			// Retrieve symbol name @ index on string table
-			const char* namePtr = (const char*)(base + reinterpret_cast<const unsigned long*>(base + RVAOfNames)[index]);
-			
-#if defined(TRACE)
-			printf("[%d] = \"%s\"\n", index, namePtr);
-#endif
-			
-			//Compares with our intended function
-			if (strcmp(func, namePtr) == 0) {
-				// Retrieve pointer to ordinal Table
-				const unsigned short* ordTable    = (const unsigned short*)(base + exportDir->AddressOfNameOrdinals);
-				// Retrieve pointer to RVA table
-				const unsigned long* funcPtrTable = (const unsigned long*)(base + exportDir->AddressOfFunctions);
-
-				// Retrieve and store function pointer
-				pLoadLibrary = (const void*(*)(const char*))(base + funcPtrTable[ordTable[index]]);
-			
-				break;
-			}
-		}
-
-		iter = iter.next();
-	} while (iter.get_base() != NULL);
+	pLoadLibrary = iterate_modules<decltype(pLoadLibrary)>(func, iter);
+	/*pLoadLibrary = NULL;
+	pLoadLibrary = iterate_modules<decltype(pLoadLibrary)>(func, iter);*/
 
 	// Calls intended function
 	if (pLoadLibrary != NULL) {
 		printf("[!] LOADING USER32.DLL...\n");
-		const void *pHandle = pLoadLibrary("user32.dll");
+		const char *pHandle = (const char *)pLoadLibrary("user32.dll");
 		if (pHandle != NULL) {
 			printf("  [!] MODULE LOADED @ %p\n", pHandle);
+			MessageBox_t pMessageBox = retrieve_function_by_name<MessageBox_t>("MessageBoxA", pHandle, L"user32.dll");
+			if (pMessageBox != NULL)
+				pMessageBox(NULL, "Hello", "From the other side", 0x00000000L);
 		}
 	}
 

@@ -27,7 +27,6 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 
 ### Next objectives:
 * Add support to 64-bit machines.
-* Make a more modularized code, as of right now it's too hard coded.
 * Compare by checksum instead of strings.
 * Dinamically import functions and store them in a user-made table of sorts(simulate IAT).
 

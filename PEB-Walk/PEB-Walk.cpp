@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 		wprintf(L"NumberOfNames in \"%s\" = %d\n", iter.get_modName(), NumberOfNames);
 #endif
 		// Iterate over the string table, comparing the strings with the one we want to find
-		for (int index = NumberOfNames-1; index > 0; index--){
+		for (int index = NumberOfNames-1; index >= 0; index--){
 			// Had to use reinterpret_cast here, otherwise VS wouldn't compile
 			// Retrieve symbol name @ index on string table
 			const char* namePtr = (const char*)(base + reinterpret_cast<const unsigned long*>(base + RVAOfNames)[index]);

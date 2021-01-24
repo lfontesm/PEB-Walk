@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 		// Retrieve module base addr
 		const char* base		= iter.get_base();
 		// Retrieve module name
-		const wchar_t* modName =  iter.get_modName();
+		const wchar_t* modName  =  iter.get_modName();
 		// Retrieve ntHeader
 		const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(base + ((WinDecls::IMAGE_DOS_HEADER*)base)->e_lfanew);
 

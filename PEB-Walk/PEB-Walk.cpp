@@ -18,6 +18,7 @@ T retrieve_function_by_hash(unsigned long funcHash, const char* base, const wcha
 	// Retrieve the RVA from this entry (the first entry on DataDirectory is the EXPORT_DIRECTORY)
 	const unsigned long exportDirRVA = dataDir.VirtualAddress;
 
+	// If exportDirRVA is NULL, it means the file doesn't have an export table, e.g, it's probably the current module
 	if (exportDirRVA == NULL) {
 #if defined(TRACE)
 		wprintf(L"[-] Couldn't find export directory on module \"%s\", skipping...\n", modName);

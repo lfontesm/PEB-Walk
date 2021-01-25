@@ -12,6 +12,12 @@ The checksum calculator I used was left in the code.
 
 I also left a log sample for visual AID. It's not much and there's tons of lines in the file, but they are just the generated output of the functions being enumerated.
 
+Executing the current version will pop a message box:
+
+![Screenshot_20210125_143523](https://user-images.githubusercontent.com/28660375/105742821-bd9e7900-5f1a-11eb-970a-9e65ed618a70.png)
+
+And I hope it's easy to understand how that happens.
+
 * IDA View:
 
 ![Screenshot_20210123_182530](https://user-images.githubusercontent.com/28660375/105614462-62e51000-5da8-11eb-8a4c-317510ac1d3f.png)

@@ -18,9 +18,10 @@ Executing the current version will pop a message box:
 
 And I hope it's easy to understand how that happens.
 
-* IDA View:
 
-![Screenshot_20210123_182530](https://user-images.githubusercontent.com/28660375/105614462-62e51000-5da8-11eb-8a4c-317510ac1d3f.png)
+In the screenshot below you can see how IDA decompiles the process of looking for LoadLibraryA
+
+![Screenshot_20210125_144411](https://user-images.githubusercontent.com/28660375/105744479-f1c66980-5f1b-11eb-8e6e-a3e53f252361.png)
 
 * x64dbg View:
    

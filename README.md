@@ -10,6 +10,8 @@ The project has reached it's intended goal, which was to simulate a dynamic cons
 Successfully building a data structure akin of an Import Table. Since the objetive of the project is too be as verbose as possible, I'm not going to completely eliminate all of the strings inside the image file, but the function lookup is now using a junior checksum to retrieve the function fom the export tables.
 The checksum calculator I used was left in the code.
 
+I also left a log sample for visual AID. It's not much and there's tons of lines in the file, but they are just the generated output of the functions being enumerated.
+
 * IDA View:
 
 ![Screenshot_20210123_182530](https://user-images.githubusercontent.com/28660375/105614462-62e51000-5da8-11eb-8a4c-317510ac1d3f.png)

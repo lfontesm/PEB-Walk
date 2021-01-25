@@ -4,8 +4,11 @@ This project was inspired due to the lack of documentation around this subject. 
 
 I'll document my learning process from simply accessing the PEB, to dynamically solving the IAT (a common technique used by malware authors).
 
+The project has reached it's intended goal, which was to simulate a dynamic construction of the Import Address Table. But I'm still not satisfied, this is not enough. The next goals will be to transform this piece of code into a packer/dropper. And I will implement even more evasion techniques, namely, the easiest that comes to mind is process Injection, since there's tons of ways one could do it. I will keep updating with new ideas. But eventually I would love to be able to implement control-flow flattening.    
+
 ### Current Version:
-After lots of head-aches my code can finally retrieve the `LoadLibraryA` function from kernel32.dll and load `user32.dll`.
+Successfully building a data structure akin of an Import Table. Since the objetive of the project is too be as verbose as possible, I'm not going to completely eliminate all of the strings inside the image file, but the function lookup is now using a junior checksum to retrieve the function fom the export tables.
+The checksum calculator I used was left in the code.
 
 * IDA View:
 
@@ -27,8 +30,7 @@ After lots of head-aches my code can finally retrieve the `LoadLibraryA` functio
 
 ### Next objectives:
 * Add support to 64-bit machines.
-* Compare by checksum instead of strings.
-* Dinamically import functions and store them in a user-made table of sorts(simulate IAT).
+* Add other evasion techniques such as packing and process injection. I'm not very versed on process hollowing, process herpaderping (I think they are forms of injection) and control flow flattening, but I hope eventually I'm able to implement them.
 
 ---
 

@@ -146,6 +146,8 @@
     <ClCompile Include="PEB-Walk.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CheckSumGen.hpp" />
+    <ClInclude Include="IAT.hpp" />
     <ClInclude Include="ModuleIterator.hpp" />
     <ClInclude Include="WinDecl.hpp" />
   </ItemGroup>

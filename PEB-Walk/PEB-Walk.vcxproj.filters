@@ -29,5 +29,11 @@
     <ClInclude Include="ModuleIterator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CheckSumGen.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IAT.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

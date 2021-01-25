@@ -11,7 +11,7 @@ unsigned long check_sum_gen(const char* str) {
 	return checksum;
 }
 
-bool compare_check_sum(unsigned long sum1, unsigned long sum2) {
+bool is_check_sum_eq(unsigned long sum1, unsigned long sum2) {
 	return sum1 == sum2;
 }
 

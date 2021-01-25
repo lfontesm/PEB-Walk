@@ -47,7 +47,7 @@ T retrieve_function_by_hash(unsigned long funcHash, const char* base, const wcha
 #endif
 
 		//Compares with our intended function
-		if ( compare_check_sum(checkSum, funcHash) ) {
+		if ( is_check_sum_eq(checkSum, funcHash) ) {
 			// Retrieve pointer to ordinal Table
 			const unsigned short* ordTable = (const unsigned short*)(base + exportDir->AddressOfNameOrdinals);
 			// Retrieve pointer to RVA table

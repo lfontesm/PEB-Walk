@@ -10,7 +10,7 @@ The project has reached it's intended goal, which was to simulate a dynamic cons
 Successfully building a data structure akin of an Import Table. Since the objetive of the project is too be as verbose as possible, I'm not going to completely eliminate all of the strings inside the image file, but the function lookup is now using a junior checksum to retrieve the function fom the export tables.
 The checksum calculator I used was left in the code.
 
-I also left a log sample for visual aid. It's not much and there's tons of lines in the file, but they are just the generated output of the functions being enumerated.
+I also left a log sample for visual aid. It's not much and there's tons of lines in the file, but they are the generated output of the functions being enumerated. So that could help, it's always nice seeing things getting done.
 
 Executing the current version will pop a message box:
 

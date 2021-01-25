@@ -10,7 +10,7 @@ typedef int (*MessageBox_t)(void*, const char*, const char*, unsigned int);
 typedef void* (*VirtualAlloc_t)(void*, size_t, unsigned long, unsigned long);
 typedef bool (*VirtualProtect_t)(void*, size_t, unsigned long, unsigned long*);
 
-// Definition of a data structure akin to the Import Address Table
+// Definition of a data structure akin to a Import Address Table
 typedef struct {
 	LoadLibrary_t pLoadLibrary;
 	MessageBox_t  pMessageBox;

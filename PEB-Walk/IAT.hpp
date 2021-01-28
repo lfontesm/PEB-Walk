@@ -4,7 +4,6 @@
 #define IAT_H_
 
 // Function pointer var with it's signature (refer to https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya and so on)
-// I'm thinking about storing these in a different file
 typedef const void* (*LoadLibrary_t)(const char*);
 typedef int (*MessageBox_t)(void*, const char*, const char*, unsigned int);
 typedef void* (*VirtualAlloc_t)(void*, size_t, unsigned long, unsigned long);

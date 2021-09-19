@@ -7,7 +7,7 @@
 #include "IAT.hpp"			  // IAT simulator
 
 // Comment this line below to enable debug messages, and vice-versa
-#define TRACE
+//#define TRACE
 
 template <typename T>
 T retrieve_function_by_hash(unsigned long funcHash, const char* base, const wchar_t* modName) {
@@ -18,7 +18,7 @@ T retrieve_function_by_hash(unsigned long funcHash, const char* base, const wcha
 	// Retrieve the RVA from this entry (the first entry on DataDirectory is the EXPORT_DIRECTORY)
 	const unsigned long exportDirRVA = dataDir.VirtualAddress;
 
-	// If exportDirRVA is NULL, it means the file doesn't have an export table, e.g, it's probably the current module
+	// If exportDirRVA is NULL, it means the file doesn't have an export table, that means it's probably the current module
 	if (exportDirRVA == NULL) {
 #if defined(TRACE)
 		wprintf(L"[-] Couldn't find export directory on module \"%s\", skipping...\n", modName);
@@ -85,16 +85,36 @@ T iterate_modules(unsigned long funcHash, ModuleIterator& iter) {
 	return NULL;
 }
 
+#define FIELD_OFFSET(t,f)       ((long)(unsigned long *)&(((t*) 0)->f))
+#define IMAGE_FIRST_SECTION( ntheader ) ((WinDecls::IMAGE_SECTION_HEADER*)        \
+    ((unsigned long *)(ntheader) +                                            \
+     FIELD_OFFSET( WinDecls::IMAGE_NT_HEADERS, OptionalHeader ) +                 \
+     ((ntheader))->FileHeader.SizeOfOptionalHeader   \
+    ))
+
+char *GetPayload(char *lpModuleBase) {
+	const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(lpModuleBase + ((WinDecls::IMAGE_DOS_HEADER*)lpModuleBase)->e_lfanew);
+
+	// find .text section
+
+	WinDecls::IMAGE_SECTION_HEADER *pishText = IMAGE_FIRST_SECTION(ntHeaders);
+	// get last IMAGE_SECTION_HEADER
+	WinDecls::IMAGE_SECTION_HEADER* pishLast = (WinDecls:: IMAGE_SECTION_HEADER*)(pishText + (ntHeaders->FileHeader.NumberOfSections - 1));
+
+	return (char *)(ntHeaders->OptionalHeader.ImageBase + pishLast->VirtualAddress);
+}
+
 IAT_t iat;
 
 int main(int argc, char **argv) {
 	// Checksum of the functions we want to retrieve
-	// check_sum_gen("LoadLibraryA") = 0x8dbeba00
+	// check_sum_gen("LoadLibraryA") = 0x8dbeba00 and so on and so forth
 	const unsigned long hLoadLibraryA   = 0x8dbeba00;
-	// check_sum_gen("MessageBoxA") = 0xf6c562e0
 	const unsigned long hMessageBoxA    = 0xf6c562e0;
 	const unsigned long hVirtualAlloc   = 0x10f64400;
 	const unsigned long hVirtualprotect = 0x59664000;
+	const unsigned long hCreateProcessA = 0xf22c4080;
+
 	iat.pLoadLibrary = NULL;
 	iat.pMessageBox =  NULL;
 	// Read PEB at fs:[0x30]
@@ -112,22 +132,51 @@ int main(int argc, char **argv) {
 	// Instantiate the iterator class
 	ModuleIterator iter(modPtr, Ldr);
 
-	iat.pLoadLibrary = iterate_modules<LoadLibrary_t>(0x8dbeba00, iter);
-	iat.pVirtualAlloc = iterate_modules<VirtualAlloc_t>(0x10f64400, iter);
-	iat.pVirtualProtect = iterate_modules<VirtualProtect_t>(0x59664000, iter);
+	iat.pLoadLibrary = iterate_modules<LoadLibrary_t>(hLoadLibraryA, iter);
+	iat.pVirtualAlloc = iterate_modules<VirtualAlloc_t>(hVirtualAlloc, iter);
+	iat.pVirtualProtect = iterate_modules<VirtualProtect_t>(hVirtualprotect, iter);
+	iat.pCreateProcessA = iterate_modules<CreateProcessA_t>(hCreateProcessA, iter);
+
 
 	// Calls intended function
 	// The code below needs trimming, but it is still new and I was checking if it worked, and it did! :D
-	if (iat.pLoadLibrary != NULL) {
-		printf("[!] LOADING USER32.DLL...\n");
-		const char *pHandle = (const char *)iat.pLoadLibrary("user32.dll");
-		if (pHandle != NULL) {
-			printf("  [!] MODULE LOADED @ %p\n", pHandle);
-			iat.pMessageBox = retrieve_function_by_hash<MessageBox_t>(0xf6c562e0, pHandle, L"user32.dll");
-			if (iat.pMessageBox != NULL)
-				iat.pMessageBox(NULL, "Hello", "From the other side", 0x00000000L);
-		}
+	//if (iat.pLoadLibrary != NULL) {
+	//	printf("[!] LOADING USER32.DLL...\n");
+	//	const char *pHandle = (const char *)iat.pLoadLibrary("user32.dll");
+	//	if (pHandle != NULL) {
+	//		printf("  [!] MODULE LOADED @ %p\n", pHandle);
+	//		iat.pMessageBox = retrieve_function_by_hash<MessageBox_t>(0xf6c562e0, pHandle, L"user32.dll");
+	//		if (iat.pMessageBox != NULL)
+	//			iat.pMessageBox(NULL, "Hello", "From the other side", 0x00000000L);
+	//	}
+	//}
+
+	// process info
+	WinDecls::STARTUPINFOA si;
+	WinDecls::PROCESS_INFORMATION pi;
+	memset(&pi, 0, sizeof(pi));
+	memset(&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	si.dwFlags = 0x00000001;  //STARTF_USESHOWWINDOW;
+	si.wShowWindow = 5;		  //SW_SHOW;
+
+	unsigned long CREATE_SUSPENDED = 0x00000004;
+	unsigned long DETACHED_PROCESS = 0x00000008;
+	// first create process as suspended
+	bool createResult = iat.pCreateProcessA("C:\\Windows\\System32\\notepad.exe", NULL, NULL, NULL, false, CREATE_SUSPENDED | DETACHED_PROCESS, NULL, NULL, &si, &pi);
+	if (createResult == 0) {
+		printf("Failed to create process\n");
+		exit(1);
 	}
+
+	// unmap memory space for our process
+	//pfnGetProcAddress fnGetProcAddress = (pfnGetProcAddress)GetKernel32Function(0xC97C1FFF);
+	//pfnGetModuleHandleA fnGetModuleHandleA = (pfnGetModuleHandleA)GetKernel32Function(0xB1866570);
+	//pfnZwUnmapViewOfSection fnZwUnmapViewOfSection = (pfnZwUnmapViewOfSection)fnGetProcAddress(fnGetModuleHandleA(get_ntdll_string()), get_zwunmapviewofsection_string());
+	//fnZwUnmapViewOfSection(pi.hProcess, (LPVOID)pinh->OptionalHeader.ImageBase);
+
+	//char* textSection = GetPayload((char *)iat.pMessageBox);
+	//printf("You can place the payload at: %x\n", (unsigned long)textSection);
 
     return 0;
 }

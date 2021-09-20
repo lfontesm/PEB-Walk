@@ -31,12 +31,32 @@ namespace WinDecls {
     };
 
     struct PEB_T {
+        bool 	InheritedAddressSpace;
+        bool 	ReadImageFileExecOptions;
+        bool 	BeingDebugged;
+        bool 	SpareBool;
+        unsigned long 	Mutant;
+        unsigned long 	ImageBaseAddress;
+        PEB_LDR_DATA_T* Ldr;
+        unsigned long 	ProcessParameters;
+        unsigned long 	SubSystemData;
+        unsigned long 	ProcessHeap;
+        unsigned long 	FastPebLock;
+        unsigned long 	FastPebLockRoutine;
+        unsigned long 	FastPebUnlockRoutine;
+        unsigned long 	EnvironmentUpdateCount;
+        unsigned long 	KernelCallbackTable;
+        unsigned long 	Reserved[2];
+    };
+    
+
+    /*struct PEB_T {
         unsigned char   Reserved1[2];
         unsigned char   BeingDebugged;
         unsigned char   Reserved2[1];
         const char* Reserved3[2];
         PEB_LDR_DATA_T* Ldr;
-    };
+    };*/
 
     struct LDR_DATA_TABLE_ENTRY_T {
         LIST_ENTRY_T InLoadOrderLinks;

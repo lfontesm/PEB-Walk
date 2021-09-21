@@ -219,6 +219,14 @@ namespace WinDecls {
         unsigned long dwProcessId;
         unsigned long dwThreadId;
     };
+
+    struct PROCESS_BASIC_INFORMATION {
+        void* Reserved1;
+        PEB_T* Peb;
+        void* Reserved2[2];
+        unsigned long* UniquePID;
+        void* Resrved3;
+    };
 }
 
 #endif // !WIN_DECL_

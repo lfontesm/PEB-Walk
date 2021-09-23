@@ -1,9 +1,9 @@
 #pragma once
+#include "ModuleIterator.hpp"
 
 #ifndef IAT_H_
 #define IAT_H_
 
-#include "WinDecl.hpp"
 
 // Function pointer var with it's signature (refer to https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya and so on)
 typedef const void* (__stdcall* LoadLibrary_t)(const char*);
@@ -19,11 +19,13 @@ typedef bool(__stdcall* ReadProcessMemory_t)(void*, const void*, void*, unsigned
 typedef void* (__stdcall* CreateFileA_t)(const char*, unsigned long, unsigned long, WinDecls::SECURITY_ATTRIBUTES*, unsigned long, unsigned long, void*);
 typedef unsigned long(__stdcall* GetFileSize_t)(void*, unsigned long*);
 typedef bool(__stdcall* ReadFile_t)(void*, void*, unsigned long, unsigned long*, void*);
-typedef void* (__stdcall* HeapAlloc_t)(void*, unsigned long, unsigned int);
+typedef void* (__stdcall* HeapAlloc_t)(char*, unsigned long, unsigned int);
 typedef void* (__stdcall* GetProcessHeap_t)(void);
 typedef void* (__stdcall* VirtualAllocEx_t)(void*, void*, unsigned int, unsigned long, unsigned long);
-typedef bool(__stdcall* WriteProcessMemory_t)(void*, void*, const void*, unsigned int, unsigned int);
-//typedef bool(__stdcall* GetThreadContext_t)(void *, )
+typedef bool(__stdcall* WriteProcessMemory_t)(void*, void*, const void*, unsigned int, unsigned int*);
+typedef bool(__stdcall* GetThreadContext_t)(void*, WinDecls::CONTEXT*);
+typedef bool(__stdcall* SetThreadContext_t)(void*, const WinDecls::CONTEXT*);
+typedef unsigned long(__stdcall* ResumeThread_t)(void*);
 
 // Definition of a data structure akin to an Import Address Table
 extern LoadLibrary_t pLoadLibrary;
@@ -39,7 +41,13 @@ extern ReadProcessMemory_t pReadProcessMemory;
 extern CreateFileA_t pCreateFileA;
 extern GetFileSize_t pGetFileSize;
 extern ReadFile_t pReadFile;
-
+extern HeapAlloc_t pHeapAlloc;
+extern GetProcessHeap_t pGetProcessHeap;
+extern VirtualAllocEx_t pVirtualAllocEx;
+extern WriteProcessMemory_t pWriteProcessMemory;
+extern GetThreadContext_t pGetThreadContext;
+extern SetThreadContext_t pSetThreadContext;
+extern ResumeThread_t pResumeThread;
 
 #endif // !IAT_H_
 

@@ -227,6 +227,110 @@ namespace WinDecls {
         unsigned long* UniquePID;
         void* Resrved3;
     };
+
+    //unsigned int SIZE_OF_80387_REGISTERS = 80;
+    struct FLOATING_SAVE_AREA {
+        unsigned long   ControlWord;
+        unsigned long   StatusWord;
+        unsigned long   TagWord;
+        unsigned long   ErrorOffset;
+        unsigned long   ErrorSelector;
+        unsigned long   DataOffset;
+        unsigned long   DataSelector;
+        char    RegisterArea[80];
+        unsigned long   Spare0;
+    };
+
+    //unsigned int MAXIMUM_SUPPORTED_EXTENSION = 512;
+
+    struct CONTEXT {
+        //
+    // The flags values within this flag control the contents of
+    // a CONTEXT record.
+    //
+    // If the context record is used as an input parameter, then
+    // for each portion of the context record controlled by a flag
+    // whose value is set, it is assumed that that portion of the
+    // context record contains valid context. If the context record
+    // is being used to modify a threads context, then only that
+    // portion of the threads context will be modified.
+    //
+    // If the context record is used as an IN OUT parameter to capture
+    // the context of a thread, then only those portions of the thread's
+    // context corresponding to set flags will be returned.
+    //
+    // The context record is never used as an OUT only parameter.
+    //
+
+        unsigned long ContextFlags;
+
+        //
+        // This section is specified/returned if CONTEXT_DEBUG_REGISTERS is
+        // set in ContextFlags.  Note that CONTEXT_DEBUG_REGISTERS is NOT
+        // included in CONTEXT_FULL.
+        //
+
+        unsigned long   Dr0;
+        unsigned long   Dr1;
+        unsigned long   Dr2;
+        unsigned long   Dr3;
+        unsigned long   Dr6;
+        unsigned long   Dr7;
+
+        //
+        // This section is specified/returned if the
+        // ContextFlags word contians the flag CONTEXT_FLOATING_POINT.
+        //
+
+        FLOATING_SAVE_AREA FloatSave;
+
+        //
+        // This section is specified/returned if the
+        // ContextFlags word contians the flag CONTEXT_SEGMENTS.
+        //
+
+        unsigned long   SegGs;
+        unsigned long   SegFs;
+        unsigned long   SegEs;
+        unsigned long   SegDs;
+
+        //
+        // This section is specified/returned if the
+        // ContextFlags word contians the flag CONTEXT_INTEGER.
+        //
+
+        unsigned long   Edi;
+        unsigned long   Esi;
+        unsigned long   Ebx;
+        unsigned long   Edx;
+        unsigned long   Ecx;
+        unsigned long   Eax;
+
+        //
+        // This section is specified/returned if the
+        // ContextFlags word contians the flag CONTEXT_CONTROL.
+        //
+
+        unsigned long   Ebp;
+        unsigned long   Eip;
+        unsigned long   SegCs;              // MUST BE SANITIZED
+        unsigned long   EFlags;             // MUST BE SANITIZED
+        unsigned long   Esp;
+        unsigned long   SegSs;
+
+        //
+        // This section is specified/returned if the ContextFlags word
+        // contains the flag CONTEXT_EXTENDED_REGISTERS.
+        // The format and contexts are processor specific
+        //
+
+        char    ExtendedRegisters[512];
+    };
+
+    /*unsigned long CREATE_SUSPENDED = 0x00000004;
+    unsigned long DETACHED_PROCESS = 0x00000008;
+    unsigned long STARF_USESHOWWINDOW = 0x00000001;
+    unsigned long SW_SHOW = 5;*/
 }
 
 #endif // !WIN_DECL_

@@ -1,7 +1,7 @@
+#include "WinDecl.hpp" // File with Windows internal definitions
 #ifndef MODULE_ITERATOR_
 #define MODULE_ITERATOR_
 
-#include "WinDecl.hpp" // File with Windows internal definitions
 
 // Simple Class to iterate over the modules on the PEB to add extra modularity
 class ModuleIterator {

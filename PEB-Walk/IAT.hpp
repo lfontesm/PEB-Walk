@@ -26,6 +26,7 @@ typedef bool(__stdcall* WriteProcessMemory_t)(void*, void*, const void*, unsigne
 typedef bool(__stdcall* GetThreadContext_t)(void*, WinDecls::CONTEXT*);
 typedef bool(__stdcall* SetThreadContext_t)(void*, const WinDecls::CONTEXT*);
 typedef unsigned long(__stdcall* ResumeThread_t)(void*);
+typedef bool(__stdcall* CloseHandle_t)(void*);
 
 // Definition of a data structure akin to an Import Address Table
 extern LoadLibrary_t pLoadLibrary;
@@ -48,6 +49,7 @@ extern WriteProcessMemory_t pWriteProcessMemory;
 extern GetThreadContext_t pGetThreadContext;
 extern SetThreadContext_t pSetThreadContext;
 extern ResumeThread_t pResumeThread;
+extern CloseHandle_t pCloseHandle;
 
 #endif // !IAT_H_
 

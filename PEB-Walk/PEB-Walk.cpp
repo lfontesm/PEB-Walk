@@ -308,7 +308,6 @@ int main(int argc, char **argv) {
 
 				unsigned long patchAddress = relocationBlock->PageAddress + relocationEntries[j].Offset;
 				unsigned long patchedBuffer = 0;
-				unsigned int bytesRead;
 				pReadProcessMemory(pProcessInfo->hProcess, (destImageBase + patchAddress), &patchedBuffer, sizeof(unsigned long), NULL);
 				patchedBuffer += (unsigned long)deltaImageBase;
 

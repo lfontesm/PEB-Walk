@@ -357,7 +357,7 @@ int main(int argc, char **argv) {
 		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
 		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
 		0x68, 0xdd, 0xdd, 0xdd, 0xdd, // push 0xdddddddd
-		0xb8, 0xdd, 0xdd, 0xdd, 0xdd, // mod eax, 0xdddddddd
+		0xb8, 0xdd, 0xdd, 0xdd, 0xdd, // mov eax, 0xdddddddd
 		0xff, 0xe0, // jmp eax
 	};
 
@@ -366,7 +366,7 @@ int main(int argc, char **argv) {
 	*((unsigned long*)(shellCode + 6)) = 1;
 	*((unsigned long*)(shellCode + 11)) = (unsigned long)destImageBase;
 	
-	
+	// Populate the push instruction with the address of FunEntry and mov eax with the address of entry point
 	*((unsigned long*)(shellCode + 16)) = (unsigned long)destImageBase + pEAT[1];
 	*((unsigned long*)(shellCode + 21)) = (unsigned long)destImageBase + sourceImageNTHeaders->OptionalHeader.AddressOfEntryPoint;
 	
